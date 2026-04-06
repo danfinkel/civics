@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D13 — Immunization Record (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #cbd5e0; padding: 40px 20px; font-family: 'Source Sans 3', sans-serif; }
+  .page {
+    background: #fff; width: 8.5in; margin: 0 auto; padding: 0.7in 0.85in 0.9in 0.85in;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12); position: relative; min-height: 10in;
+  }
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute; bottom: 0.35in; left: 0; right: 0; text-align: center;
+    font-size: 8pt; color: #a0aec0; letter-spacing: 0.1em;
+  }
+  .hdr { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #276749; padding-bottom: 14px; margin-bottom: 18px; }
+  .clinic .name { font-size: 15pt; font-weight: 700; color: #22543d; }
+  .clinic .sub { font-size: 8.5pt; color: #718096; margin-top: 2px; }
+  .doc-id { text-align: right; font-size: 8.5pt; color: #4a5568; }
+  .doc-id .mono { font-family: 'IBM Plex Mono', monospace; }
+  .patient { background: #f0fff4; border: 1px solid #9ae6b4; padding: 12px 16px; margin-bottom: 18px; font-size: 9.5pt; }
+  .patient strong { color: #22543d; }
+  h2 { font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #276749; margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 16px; }
+  th { background: #276749; color: #fff; text-align: left; padding: 7px 10px; font-weight: 600; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.03em; }
+  td { padding: 8px 10px; border: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) { background: #f7fafc; }
+  .note { font-size: 8.5pt; color: #718096; margin-top: 12px; }
+  @media print { body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hdr">
+    <div class="clinic">
+      <div class="name">Synthetic Pediatrics LLC</div>
+      <div class="sub">45 Beacon Row, Boston, MA 02114 · (617) 555-3300</div>
+    </div>
+    <div class="doc-id">
+      <div>Immunization record</div>
+      <div class="mono">IMM-FAKE-913344</div>
+      <div>Printed: March 20, 2026</div>
+    </div>
+  </div>
+
+  <div class="patient">
+    <strong>Patient:</strong> Sofia Ramirez-Chen &nbsp;|&nbsp; <strong>DOB:</strong> July 8, 2018 &nbsp;|&nbsp; <strong>MRN:</strong> SP-2018-7781
+  </div>
+
+  <h2>Vaccine administration history</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Vaccine</th>
+        <th>Dose / formulation</th>
+        <th>Date administered</th>
+        <th>Site / lot (synthetic)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>MMR (measles, mumps, rubella)</td>
+        <td>MMR II — 0.5 mL</td>
+        <td>September 14, 2018</td>
+        <td>Lot: MMR-FAKE-901</td>
+      </tr>
+      <tr>
+        <td>DTaP (diphtheria, tetanus, pertussis)</td>
+        <td>Pediarix — 0.5 mL</td>
+        <td>August 2, 2018</td>
+        <td>Lot: DT-FAKE-442</td>
+      </tr>
+      <tr>
+        <td>Varicella</td>
+        <td>Varivax — 0.5 mL</td>
+        <td>September 14, 2018</td>
+        <td>Lot: VAR-FAKE-118</td>
+      </tr>
+      <tr>
+        <td>Hepatitis B</td>
+        <td>Engerix-B — 0.5 mL</td>
+        <td>July 18, 2018</td>
+        <td>Lot: HB-FAKE-220</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="note">This record is synthetic for hackathon testing. It does not reflect real clinical data.</p>
+</div>
+</body>
+</html>

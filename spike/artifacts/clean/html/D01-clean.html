@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D01 — DTA Verification Notice (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #d0cfc8;
+    font-family: 'Source Sans 3', 'Helvetica Neue', sans-serif;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .page {
+    background: #fff;
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    padding: 0.85in 1in 1in 1in;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    position: relative;
+  }
+
+  /* SYNTHETIC watermark */
+  .page::before {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute;
+    bottom: 0.5in;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9pt;
+    color: #aaa;
+    letter-spacing: 0.12em;
+    font-family: 'Source Sans 3', sans-serif;
+    white-space: nowrap;
+    border-top: 1px solid #ddd;
+    width: calc(100% - 2in);
+    text-align: center;
+    padding-top: 6px;
+  }
+
+  /* Header / Letterhead */
+  .letterhead {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    border-bottom: 3px solid #1a3a5c;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+
+  .seal {
+    width: 68px;
+    height: 68px;
+    flex-shrink: 0;
+  }
+
+  .agency-name {
+    flex: 1;
+  }
+
+  .agency-name .state-line {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #1a3a5c;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .agency-name .dept-line {
+    font-size: 14.5pt;
+    font-weight: 700;
+    color: #1a3a5c;
+    line-height: 1.2;
+  }
+
+  .agency-name .sub-line {
+    font-size: 9.5pt;
+    color: #4a5568;
+    margin-top: 2px;
+  }
+
+  .agency-address {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #4a5568;
+    line-height: 1.6;
+  }
+
+  /* Notice meta block */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 20px;
+  }
+
+  .recipient-block {
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+
+  .recipient-block .label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  .notice-meta {
+    text-align: right;
+    font-size: 9.5pt;
+    line-height: 1.8;
+    color: #1a1a1a;
+    min-width: 200px;
+  }
+
+  .notice-meta .meta-label {
+    font-weight: 600;
+    color: #444;
+  }
+
+  /* Notice title */
+  .notice-title {
+    background: #1a3a5c;
+    color: #fff;
+    text-align: center;
+    padding: 9px 16px;
+    font-size: 12pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* Body */
+  .body-text {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+  }
+
+  .body-text strong {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+  }
+
+  /* Deadline box */
+  .deadline-box {
+    border: 2.5px solid #b71c1c;
+    padding: 12px 16px;
+    margin: 18px 0;
+    background: #fff8f8;
+  }
+
+  .deadline-box .deadline-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 9pt;
+    font-weight: 700;
+    color: #b71c1c;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+  }
+
+  .deadline-box .deadline-date {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14pt;
+    font-weight: 700;
+    color: #b71c1c;
+  }
+
+  .deadline-box .deadline-note {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 9.5pt;
+    color: #555;
+    margin-top: 4px;
+  }
+
+  /* Required documents table */
+  .req-header {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #1a3a5c;
+    margin: 18px 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #1a3a5c;
+    padding-bottom: 4px;
+  }
+
+  .req-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin-bottom: 16px;
+  }
+
+  .req-table th {
+    background: #eef2f7;
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    color: #1a3a5c;
+    padding: 6px 10px;
+    text-align: left;
+    border: 1px solid #c5d1e0;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .req-table td {
+    padding: 7px 10px;
+    border: 1px solid #dde3ec;
+    vertical-align: top;
+    line-height: 1.5;
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: #1a1a1a;
+  }
+
+  .req-table tr:nth-child(even) td {
+    background: #f9fafb;
+  }
+
+  /* Consequence box */
+  .consequence-box {
+    border-left: 4px solid #b71c1c;
+    background: #fff3f3;
+    padding: 10px 14px;
+    margin: 16px 0;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+  }
+
+  .consequence-box .consequence-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 9pt;
+    font-weight: 700;
+    color: #b71c1c;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  /* Submission instructions */
+  .submit-section {
+    margin: 16px 0;
+  }
+
+  .submit-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .submit-option {
+    border: 1px solid #c5d1e0;
+    padding: 10px 12px;
+    font-size: 9pt;
+    line-height: 1.5;
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: #1a1a1a;
+  }
+
+  .submit-option .opt-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    font-size: 8.5pt;
+    color: #1a3a5c;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+  }
+
+  /* Signature block */
+  .signature-block {
+    margin-top: 22px;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+
+  .signature-block .sig-name {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+  }
+
+  .caseworker-contact {
+    margin-top: 6px;
+    font-size: 9pt;
+    color: #444;
+  }
+
+  .case-number-bar {
+    background: #f0f4f9;
+    border: 1px solid #c5d1e0;
+    padding: 5px 12px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 8.5pt;
+    color: #444;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .notice-ref {
+    font-size: 8pt;
+    color: #888;
+    margin-top: 20px;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- LETTERHEAD -->
+  <div class="letterhead">
+    <svg class="seal" viewBox="0 0 68 68" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="34" cy="34" r="32" fill="none" stroke="#1a3a5c" stroke-width="2"/>
+      <circle cx="34" cy="34" r="27" fill="none" stroke="#1a3a5c" stroke-width="0.8"/>
+      <text x="34" y="22" text-anchor="middle" font-size="5.5" font-family="sans-serif" font-weight="bold" fill="#1a3a5c">COMMONWEALTH OF</text>
+      <text x="34" y="29" text-anchor="middle" font-size="5.5" font-family="sans-serif" font-weight="bold" fill="#1a3a5c">MASSACHUSETTS</text>
+      <text x="34" y="42" text-anchor="middle" font-size="4.5" font-family="sans-serif" fill="#1a3a5c">DEPT. OF TRANSITIONAL</text>
+      <text x="34" y="48" text-anchor="middle" font-size="4.5" font-family="sans-serif" fill="#1a3a5c">ASSISTANCE</text>
+      <!-- Star decoration -->
+      <text x="34" y="37" text-anchor="middle" font-size="9" fill="#1a3a5c">★</text>
+      <!-- SYNTHETIC label in seal -->
+      <text x="34" y="59" text-anchor="middle" font-size="3.8" font-family="sans-serif" fill="#999">SYNTHETIC</text>
+    </svg>
+
+    <div class="agency-name">
+      <div class="state-line">Commonwealth of Massachusetts</div>
+      <div class="dept-line">Department of Transitional Assistance</div>
+      <div class="sub-line">Office of Assistance Programs — Boston District Office</div>
+    </div>
+
+    <div class="agency-address">
+      DTA Boston District Office (Synthetic)<br>
+      601 Tremont Street, Suite 400<br>
+      Boston, MA 02118<br>
+      Tel: (617) 555-0190<br>
+      TTY: (617) 555-0191
+    </div>
+  </div>
+
+  <!-- CASE NUMBER BAR -->
+  <div class="case-number-bar">
+    <span><strong>Case Number:</strong> FAKE-2026-0042</span>
+    <span><strong>Program:</strong> SNAP / Food Assistance</span>
+    <span><strong>Document Type:</strong> Verification Request — Income</span>
+  </div>
+
+  <!-- RECIPIENT + NOTICE META -->
+  <div class="meta-row">
+    <div class="recipient-block">
+      <div class="label">Notice Recipient</div>
+      Maria Gonzalez-Reyes<br>
+      247 Elm Street, Apt 3B<br>
+      Boston, MA 02119
+    </div>
+    <div class="notice-meta">
+      <div><span class="meta-label">Notice Date:</span> April 1, 2026</div>
+      <div><span class="meta-label">Notice ID:</span> VRN-2026-0042-INC</div>
+      <div><span class="meta-label">Caseworker:</span> James T. Patel</div>
+      <div><span class="meta-label">Office Phone:</span> (617) 555-0192</div>
+    </div>
+  </div>
+
+  <!-- NOTICE TITLE BAR -->
+  <div class="notice-title">Important Notice: Verification of Earned Income Required</div>
+
+  <!-- SALUTATION + BODY -->
+  <p class="body-text">Dear Maria Gonzalez-Reyes,</p>
+
+  <p class="body-text">
+    Your household has been receiving SNAP benefits (Supplemental Nutrition Assistance Program) under case number <strong>FAKE-2026-0042</strong>. As part of the ongoing eligibility process, the Department of Transitional Assistance is required to verify current household income information.
+  </p>
+
+  <p class="body-text">
+    Our records indicate that verification of your current <strong>earned income</strong> is needed to continue your benefits. Please provide the documentation listed below as soon as possible.
+  </p>
+
+  <!-- DEADLINE BOX -->
+  <div class="deadline-box">
+    <div class="deadline-label">Response Deadline</div>
+    <div class="deadline-date">April 15, 2026</div>
+    <div class="deadline-note">You must submit the required documentation on or before this date to avoid interruption of benefits.</div>
+  </div>
+
+  <!-- REQUIRED DOCUMENTS -->
+  <div class="req-header">Required Documentation</div>
+
+  <table class="req-table">
+    <thead>
+      <tr>
+        <th style="width:30%">Proof Category</th>
+        <th style="width:45%">Acceptable Documents</th>
+        <th style="width:25%">Coverage Period</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Earned Income</strong><br>(Required)</td>
+        <td>
+          Recent pay stubs (last 30 days); employer letter on company letterhead; most recent W-2 or 1099 form; self-employment records with income and expense ledger
+        </td>
+        <td>Documents must reflect income received within the past 30 days from the date of this notice</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- CONSEQUENCE BOX -->
+  <div class="consequence-box">
+    <div class="consequence-label">Consequence of Non-Response</div>
+    If the required documentation is not received by <strong>April 15, 2026</strong>, your SNAP case (Case No. FAKE-2026-0042) will be <strong>closed</strong> and your household will no longer receive SNAP benefits. You may reapply, but benefits cannot be restored retroactively for the period during which your case was closed.
+  </div>
+
+  <!-- HOW TO SUBMIT -->
+  <div class="req-header">How to Submit Your Documents</div>
+
+  <div class="submit-options">
+    <div class="submit-option">
+      <div class="opt-label">In Person</div>
+      DTA Boston District Office<br>601 Tremont Street, Suite 400<br>Boston, MA 02118<br>Hours: M–F, 8:30 AM – 4:30 PM
+    </div>
+    <div class="submit-option">
+      <div class="opt-label">By Mail</div>
+      Mail documents to the address above, Attn: Caseworker James T. Patel. Allow 3 business days for receipt.
+    </div>
+    <div class="submit-option">
+      <div class="opt-label">By Fax / DTA Connect</div>
+      Fax: (617) 555-0193<br>Or upload via DTA Connect at dtaconnect.eohhs.mass.gov (Synthetic portal — not a real URL)
+    </div>
+  </div>
+
+  <!-- SIGNATURE -->
+  <div class="signature-block">
+    <p class="body-text" style="margin-top:16px;">
+      If you have questions about this notice or need help gathering documents, please contact your caseworker directly. Interpreter services are available upon request at no cost.
+    </p>
+
+    <p style="margin-top: 14px; font-family: 'Source Serif 4', Georgia, serif; font-size: 10pt; line-height:1.7;">
+      Sincerely,
+    </p>
+    <p style="margin-top: 8px;">
+      <span class="sig-name">James T. Patel</span><br>
+      <span style="font-size:9.5pt; color:#444;">Eligibility Case Manager, DTA Boston District Office (Synthetic)<br>
+      Direct: (617) 555-0192 &nbsp;|&nbsp; Fax: (617) 555-0193</span>
+    </p>
+  </div>
+
+  <p class="notice-ref">
+    DTA Form VRN-INC (Synthetic) &nbsp;|&nbsp; Rev. Jan 2026 &nbsp;|&nbsp; TDD/TTY users call (617) 555-0191 &nbsp;|&nbsp; Para información en español, llame al (617) 555-0190
+  </p>
+
+</div>
+</body>
+</html>

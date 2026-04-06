@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D09 — Synthetic State ID Card</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600&family=Oswald:wght@400;500;600&family=Source+Sans+3:wght@400;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%);
+    min-height: 100vh; padding: 48px 20px; font-family: 'Source Sans 3', sans-serif;
+  }
+  .wrap { max-width: 420px; margin: 0 auto; text-align: center; }
+  .label-top { color: #aab; font-size: 9pt; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px; }
+  .card {
+    background: linear-gradient(145deg, #e8ecf2 0%, #d4dae6 40%, #c5ccd9 100%);
+    border-radius: 14px; padding: 0; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6);
+    border: 1px solid #9aa3b2; position: relative;
+  }
+  .watermark {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg);
+    font-size: 28pt; font-weight: 700; color: rgba(180, 40, 40, 0.12); letter-spacing: 0.2em;
+    pointer-events: none; white-space: nowrap; font-family: 'Oswald', sans-serif;
+  }
+  .card-header {
+    background: #1e3a5f; color: #fff; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-header .state { font-family: 'Oswald', sans-serif; font-size: 13pt; letter-spacing: 0.08em; }
+  .card-header .type { font-size: 8pt; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card-body { display: flex; padding: 16px; gap: 14px; position: relative; z-index: 1; }
+  .photo-box {
+    width: 96px; height: 118px; background: linear-gradient(180deg, #a8b8c8 0%, #8898a8 100%);
+    border: 2px solid #6a7a8a; border-radius: 4px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #456; text-align: center; padding: 6px;
+  }
+  .fields { flex: 1; font-size: 9pt; line-height: 1.45; color: #1a1a1a; }
+  .fields .name { font-family: 'Oswald', sans-serif; font-size: 14pt; letter-spacing: 0.02em; margin-bottom: 8px; color: #0d1f33; }
+  .fields .row { display: flex; gap: 8px; margin-bottom: 4px; }
+  .fields .lbl { font-weight: 600; color: #456; min-width: 72px; font-size: 7.5pt; text-transform: uppercase; }
+  .fields .idnum { font-family: 'IBM Plex Mono', monospace; font-size: 11pt; font-weight: 600; letter-spacing: 0.06em; }
+  .bar { height: 36px; background: repeating-linear-gradient(90deg, #1a1a1a, #1a1a1a 2px, #fff 2px, #fff 3px); margin: 0 16px 12px 16px; border-radius: 2px; opacity: 0.85; }
+  .footer-note { font-size: 8pt; color: #789; padding: 0 16px 14px 16px; text-align: center; }
+  @media print { body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="label-top">Synthetic identification — not a real MA license design</p>
+  <div class="card">
+    <div class="watermark">SYNTHETIC ID</div>
+    <div class="card-header">
+      <span class="state">Sample State Credential</span>
+      <span class="type">Driver License — Demo</span>
+    </div>
+    <div class="card-body">
+      <div class="photo-box">PHOTO<br>PLACEHOLDER<br>(SYNTHETIC)</div>
+      <div class="fields">
+        <div class="name">Maria Gonzalez-Reyes</div>
+        <div class="row"><span class="lbl">DOB</span> March 12, 1988</div>
+        <div class="row"><span class="lbl">ID No.</span> <span class="idnum">MA-FAKE-8821</span></div>
+        <div class="row"><span class="lbl">Expires</span> January 31, 2030</div>
+        <div class="row"><span class="lbl">Address</span> 247 Elm St Apt 3B, Boston, MA 02119</div>
+        <div class="row"><span class="lbl">Class</span> D &nbsp; <span class="lbl" style="min-width:40px">Sex</span> F</div>
+      </div>
+    </div>
+    <div class="bar" title="Decorative barcode strip — synthetic"></div>
+    <p class="footer-note">SYNTHETIC DOCUMENT — NOT OFFICIAL — FOR HACKATHON TESTING ONLY</p>
+  </div>
+</div>
+</body>
+</html>

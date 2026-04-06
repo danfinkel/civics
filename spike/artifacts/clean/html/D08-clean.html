@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D08 — Handwritten Residency Note (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Source+Sans+3:wght@400;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #b8b5aa; padding: 40px 20px; min-height: 100vh; }
+  .page-wrap { max-width: 8.5in; margin: 0 auto; }
+  .banner {
+    font-family: 'Source Sans 3', sans-serif; font-size: 9pt; color: #333; text-align: center;
+    margin-bottom: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .page {
+    background: repeating-linear-gradient(
+      transparent,
+      transparent 27px,
+      #c4d4e8 27px,
+      #c4d4e8 28px
+    );
+    background-color: #fef9e8;
+    width: 8.5in; min-height: 9in; margin: 0 auto; padding: 36px 48px 48px 56px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.2); position: relative;
+    border-left: 3px solid #e8b4b4;
+  }
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;
+    font-family: 'Source Sans 3', sans-serif; font-size: 7.5pt; color: #999; letter-spacing: 0.1em;
+  }
+  .hand {
+    font-family: 'Caveat', cursive; font-size: 22pt; line-height: 1.35; color: #1a2744;
+    margin-top: 8px; max-width: 6.2in;
+  }
+  .hand .sig { margin-top: 28px; font-size: 26pt; }
+  @media print { body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+  <p class="banner">Simulated handwritten note — no letterhead or notarization</p>
+  <div class="page">
+    <div class="hand">
+      To Whom It May Concern,<br><br>
+      This is to say that Maria Gonzalez-Reyes lives at my building at 247 Elm St #3B Boston. She pays rent every month. I am the landlord.<br><br>
+      Thanks,<br>
+      <span class="sig">Jim</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

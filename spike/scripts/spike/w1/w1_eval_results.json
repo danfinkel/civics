@@ -1,0 +1,150 @@
+[
+  {
+    "file": "D03.pdf",
+    "n_runs": 10,
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "accuracy_pct": 87.8,
+    "hallucination_rate_pct": 41.4,
+    "json_parseable_pct": 100.0,
+    "fields": {
+      "employer_name": {
+        "avg_score": -1.0,
+        "exact": 0,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 10,
+        "most_common_value": "Synthec Corp LLC",
+        "stability_fraction": 1.0
+      },
+      "employee_name": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "Maria Gonzalez-Reyes",
+        "stability_fraction": 1.0
+      },
+      "pay_period_start": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "March 15, 2026",
+        "stability_fraction": 1.0
+      },
+      "pay_period_end": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "March 28, 2026",
+        "stability_fraction": 1.0
+      },
+      "gross_income": {
+        "avg_score": -0.7,
+        "exact": 1,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 9,
+        "most_common_value": "$10,258.75",
+        "stability_fraction": 0.9
+      },
+      "net_income": {
+        "avg_score": -1.0,
+        "exact": 0,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 10,
+        "most_common_value": "$7,334.26",
+        "stability_fraction": 1.0
+      },
+      "pay_date": {
+        "avg_score": 1.0,
+        "exact": 0,
+        "partial": 10,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "MISSING",
+        "stability_fraction": 1.0
+      }
+    }
+  },
+  {
+    "file": "D03-degraded.jpg",
+    "n_runs": 10,
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "accuracy_pct": 84.2,
+    "hallucination_rate_pct": 14.3,
+    "json_parseable_pct": 100.0,
+    "fields": {
+      "employer_name": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "Synthetic Corp LLC",
+        "stability_fraction": 1.0
+      },
+      "employee_name": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "Maria Gonzalez-Reyes",
+        "stability_fraction": 1.0
+      },
+      "pay_period_start": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "March 15, 2026",
+        "stability_fraction": 1.0
+      },
+      "pay_period_end": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "March 28, 2026",
+        "stability_fraction": 1.0
+      },
+      "gross_income": {
+        "avg_score": 2.0,
+        "exact": 10,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 0,
+        "most_common_value": "1847.50",
+        "stability_fraction": 0.9
+      },
+      "net_income": {
+        "avg_score": -1.0,
+        "exact": 0,
+        "partial": 0,
+        "unreadable": 0,
+        "hallucinated": 10,
+        "most_common_value": "1258.75",
+        "stability_fraction": 0.9
+      },
+      "pay_date": {
+        "avg_score": 0.1,
+        "exact": 0,
+        "partial": 1,
+        "unreadable": 9,
+        "hallucinated": 0,
+        "most_common_value": "UNREADABLE",
+        "stability_fraction": 0.9
+      }
+    }
+  }
+]

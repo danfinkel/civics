@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D05 — Lease Agreement (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #ccc9c0;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    padding: 40px 20px;
+  }
+
+  .page {
+    background: #fefefe;
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    padding: 0.9in 1in 1in 1in;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    position: relative;
+  }
+
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute;
+    bottom: 0.4in;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 8pt;
+    color: #bbb;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+
+  /* Title block */
+  .doc-title {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .doc-title h1 {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 15pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+
+  .doc-title .subtitle {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 9pt;
+    color: #666;
+    letter-spacing: 0.04em;
+  }
+
+  .title-rule {
+    border: none;
+    border-top: 2px solid #1a1a1a;
+    margin: 10px 0 4px 0;
+  }
+
+  .title-rule-thin {
+    border: none;
+    border-top: 1px solid #1a1a1a;
+    margin: 0 0 18px 0;
+  }
+
+  /* Party block */
+  .party-block {
+    border: 1px solid #ccc;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    background: #f9f8f6;
+  }
+
+  .party-block .pb-title {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 8.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #555;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+  }
+
+  .party-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .party-item .pi-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  .party-item .pi-value {
+    font-size: 10pt;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+
+  /* Body text */
+  p.clause {
+    font-size: 10pt;
+    line-height: 1.75;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    text-align: justify;
+  }
+
+  p.clause .cl-num {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    font-size: 9.5pt;
+    color: #333;
+  }
+
+  h2.section {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #1a1a1a;
+    margin: 18px 0 8px 0;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 3px;
+  }
+
+  /* Key terms summary box */
+  .key-terms {
+    border: 1.5px solid #999;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    background: #f5f4f1;
+  }
+
+  .key-terms .kt-title {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 9pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #333;
+    margin-bottom: 8px;
+  }
+
+  .key-terms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .kt-item .kt-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  .kt-item .kt-value {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  /* Signature block */
+  .sig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 24px;
+  }
+
+  .sig-block .sig-line {
+    border-bottom: 1px solid #333;
+    height: 32px;
+    margin-bottom: 4px;
+  }
+
+  .sig-block .sig-label {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 8pt;
+    color: #666;
+  }
+
+  .sig-block .sig-name {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 9pt;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 2px;
+  }
+
+  .notary-block {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px 14px;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  .notary-block .nb-title {
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    color: #333;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- TITLE -->
+  <div class="doc-title">
+    <h1>Residential Lease Agreement</h1>
+    <div class="subtitle">Commonwealth of Massachusetts &nbsp;|&nbsp; Suffolk County</div>
+    <hr class="title-rule">
+    <hr class="title-rule-thin">
+  </div>
+
+  <!-- KEY TERMS SUMMARY -->
+  <div class="key-terms">
+    <div class="kt-title">Key Lease Terms at a Glance</div>
+    <div class="key-terms-grid">
+      <div class="kt-item">
+        <div class="kt-label">Lease Start Date</div>
+        <div class="kt-value">February 1, 2026</div>
+      </div>
+      <div class="kt-item">
+        <div class="kt-label">Lease Term</div>
+        <div class="kt-value">12 Months</div>
+      </div>
+      <div class="kt-item">
+        <div class="kt-label">Lease End Date</div>
+        <div class="kt-value">January 31, 2027</div>
+      </div>
+      <div class="kt-item">
+        <div class="kt-label">Monthly Rent</div>
+        <div class="kt-value">$1,650.00</div>
+      </div>
+      <div class="kt-item">
+        <div class="kt-label">Security Deposit</div>
+        <div class="kt-value">$1,650.00</div>
+      </div>
+      <div class="kt-item">
+        <div class="kt-label">Rent Due Date</div>
+        <div class="kt-value">1st of each month</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARTIES -->
+  <div class="party-block">
+    <div class="pb-title">Parties to this Agreement</div>
+    <div class="party-grid">
+      <div class="party-item">
+        <div class="pi-label">Landlord</div>
+        <div class="pi-value">
+          James T. Whitmore Properties LLC<br>
+          c/o 88 Beacon Street, Suite 3<br>
+          Boston, MA 02108<br>
+          Tel: (617) 555-0244
+        </div>
+      </div>
+      <div class="party-item">
+        <div class="pi-label">Tenant</div>
+        <div class="pi-value">
+          Maria Gonzalez-Reyes<br>
+          247 Elm Street, Apt 3B<br>
+          Boston, MA 02119
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREMISES -->
+  <h2 class="section">1. Premises</h2>
+  <p class="clause">
+    <span class="cl-num">1.1</span> &nbsp;Landlord hereby leases to Tenant, and Tenant hereby leases from Landlord, the residential premises located at <strong>247 Elm Street, Apartment 3B, Boston, Massachusetts 02119</strong> (the "Premises"), for use as a private residence only.
+  </p>
+  <p class="clause">
+    <span class="cl-num">1.2</span> &nbsp;The Premises consist of a two-bedroom apartment on the third floor of the building located at 247 Elm Street, Boston, MA 02119. Tenant acknowledges having inspected the Premises and agrees to accept them in their current condition, subject to any agreed-upon repairs noted in Exhibit A (not included in this synthetic document).
+  </p>
+
+  <!-- TERM -->
+  <h2 class="section">2. Lease Term</h2>
+  <p class="clause">
+    <span class="cl-num">2.1</span> &nbsp;This lease shall commence on <strong>February 1, 2026</strong> and shall terminate on <strong>January 31, 2027</strong>, unless sooner terminated in accordance with the provisions hereof (the "Term"). Tenant shall vacate the Premises no later than 11:59 PM on the last day of the Term unless the parties have executed a written renewal or extension.
+  </p>
+
+  <!-- RENT -->
+  <h2 class="section">3. Rent</h2>
+  <p class="clause">
+    <span class="cl-num">3.1</span> &nbsp;Tenant agrees to pay Landlord the sum of <strong>$1,650.00 per month</strong> as rent for the Premises. Rent shall be due and payable on the <strong>first (1st) day of each calendar month</strong> during the Term. Rent shall be paid by check, money order, or electronic transfer to the address of Landlord listed above or to such other address as Landlord may designate in writing.
+  </p>
+  <p class="clause">
+    <span class="cl-num">3.2</span> &nbsp;If rent is not received within five (5) days of the due date, Tenant shall pay a late fee of $50.00. Acceptance of late rent or late fees shall not constitute a waiver of Landlord's right to enforce timely payment in the future.
+  </p>
+
+  <!-- SECURITY DEPOSIT -->
+  <h2 class="section">4. Security Deposit</h2>
+  <p class="clause">
+    <span class="cl-num">4.1</span> &nbsp;Upon execution of this Agreement, Tenant shall deposit with Landlord the sum of <strong>$1,650.00</strong> as a security deposit. The security deposit shall be held in accordance with Massachusetts General Laws Chapter 186, Section 15B. Landlord shall return the security deposit, less any lawful deductions, within thirty (30) days of the termination of this lease.
+  </p>
+
+  <!-- OCCUPANTS -->
+  <h2 class="section">5. Occupants</h2>
+  <p class="clause">
+    <span class="cl-num">5.1</span> &nbsp;The Premises shall be occupied solely by the Tenant named above and the following additional occupants: <strong>Sofia Ramirez-Chen</strong> (minor child). No other persons shall occupy the Premises without the prior written consent of Landlord.
+  </p>
+
+  <!-- UTILITIES -->
+  <h2 class="section">6. Utilities</h2>
+  <p class="clause">
+    <span class="cl-num">6.1</span> &nbsp;Tenant shall be responsible for payment of all utilities including electricity, gas, and internet service. Water and trash removal are included in the monthly rent. Tenant shall establish utility accounts in Tenant's own name prior to the commencement date.
+  </p>
+
+  <!-- SIGNATURES -->
+  <h2 class="section">7. Execution</h2>
+  <p class="clause">
+    The parties have executed this Residential Lease Agreement as of the date first written below. This Agreement constitutes the entire agreement between the parties with respect to the Premises and supersedes all prior understandings, negotiations, and agreements.
+  </p>
+
+  <div class="sig-grid">
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-label">Landlord Signature</div>
+      <div class="sig-name">James T. Whitmore, Member<br>James T. Whitmore Properties LLC</div>
+      <div class="sig-label" style="margin-top:8px;">Date: January 25, 2026</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-label">Tenant Signature</div>
+      <div class="sig-name">Maria Gonzalez-Reyes</div>
+      <div class="sig-label" style="margin-top:8px;">Date: January 25, 2026</div>
+    </div>
+  </div>
+
+  <div class="notary-block">
+    <div class="nb-title">Notary Acknowledgment (Synthetic)</div>
+    On this 25th day of January, 2026, before me personally appeared James T. Whitmore and Maria Gonzalez-Reyes, known to me to be the persons whose names are subscribed to the within instrument, and acknowledged to me that they executed the same for the purposes therein contained. In witness whereof I hereunto set my hand and official seal. &nbsp;<strong>Patricia A. Donnelly, Notary Public, Commonwealth of Massachusetts. Commission No. FAKE-NP-2024-0091. My commission expires: December 31, 2027.</strong>
+  </div>
+
+</div>
+</body>
+</html>

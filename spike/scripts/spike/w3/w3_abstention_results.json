@@ -1,0 +1,127 @@
+[
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/clean/D01-blurry.jpg",
+    "file_name": "D01-blurry.jpg",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"document_type\": \"Notice\",\n  \"holder_name\": {\n    \"value\": \"Maria Gonzalez-Raynes\",\n    \"reason\": \"\"\n  },\n  \"notice_date\": {\n    \"value\": \"April 1, 2026\",\n    \"reason\": \"\"\n  },\n  \"response_deadline\": {\n    \"value\": \"April 15, 2026\",\n    \"reason\": \"\"\n  },\n  \"key_amount_or_address\": {\n    \"value\": \"UNCERTAIN\",\n    \"reason\": \"No specific amount or address is visible in the provided text.\"\n  }\n}",
+        "parsed": {
+          "document_type": "Notice",
+          "holder_name": {
+            "value": "Maria Gonzalez-Raynes",
+            "reason": ""
+          },
+          "notice_date": {
+            "value": "April 1, 2026",
+            "reason": ""
+          },
+          "response_deadline": {
+            "value": "April 15, 2026",
+            "reason": ""
+          },
+          "key_amount_or_address": {
+            "value": "UNCERTAIN",
+            "reason": "No specific amount or address is visible in the provided text."
+          }
+        },
+        "elapsed_s": 29.48
+      },
+      {
+        "raw": "{\n  \"document_type\": \"Notice\",\n  \"holder_name\": {\n    \"value\": \"Maria Gonzalez-Raynes\",\n    \"reason\": \"\"\n  },\n  \"notice_date\": {\n    \"value\": \"April 1, 2026\",\n    \"reason\": \"\"\n  },\n  \"response_deadline\": {\n    \"value\": \"April 15, 2026\",\n    \"reason\": \"\"\n  },\n  \"key_amount_or_address\": {\n    \"value\": \"UNCERTAIN\",\n    \"reason\": \"No specific amount or address is visible in the provided text.\"\n  }\n}",
+        "parsed": {
+          "document_type": "Notice",
+          "holder_name": {
+            "value": "Maria Gonzalez-Raynes",
+            "reason": ""
+          },
+          "notice_date": {
+            "value": "April 1, 2026",
+            "reason": ""
+          },
+          "response_deadline": {
+            "value": "April 15, 2026",
+            "reason": ""
+          },
+          "key_amount_or_address": {
+            "value": "UNCERTAIN",
+            "reason": "No specific amount or address is visible in the provided text."
+          }
+        },
+        "elapsed_s": 22.35
+      },
+      {
+        "raw": "{\n  \"document_type\": \"Notice\",\n  \"holder_name\": {\n    \"value\": \"Maria Gonzalez-Raynes\",\n    \"reason\": \"\"\n  },\n  \"notice_date\": {\n    \"value\": \"April 1, 2026\",\n    \"reason\": \"\"\n  },\n  \"response_deadline\": {\n    \"value\": \"April 15, 2026\",\n    \"reason\": \"\"\n  },\n  \"key_amount_or_address\": {\n    \"value\": \"UNCERTAIN\",\n    \"reason\": \"No specific amount or address is visible in the provided text.\"\n  }\n}",
+        "parsed": {
+          "document_type": "Notice",
+          "holder_name": {
+            "value": "Maria Gonzalez-Raynes",
+            "reason": ""
+          },
+          "notice_date": {
+            "value": "April 1, 2026",
+            "reason": ""
+          },
+          "response_deadline": {
+            "value": "April 15, 2026",
+            "reason": ""
+          },
+          "key_amount_or_address": {
+            "value": "UNCERTAIN",
+            "reason": "No specific amount or address is visible in the provided text."
+          }
+        },
+        "elapsed_s": 25.12
+      },
+      {
+        "raw": "{\n  \"document_type\": \"Notice\",\n  \"holder_name\": {\n    \"value\": \"Maria Gonzalez-Raynes\",\n    \"reason\": \"\"\n  },\n  \"notice_date\": {\n    \"value\": \"April 1, 2026\",\n    \"reason\": \"\"\n  },\n  \"response_deadline\": {\n    \"value\": \"April 15, 2026\",\n    \"reason\": \"\"\n  },\n  \"key_amount_or_address\": {\n    \"value\": \"UNCERTAIN\",\n    \"reason\": \"No specific amount or address is visible in the provided text.\"\n  }\n}",
+        "parsed": {
+          "document_type": "Notice",
+          "holder_name": {
+            "value": "Maria Gonzalez-Raynes",
+            "reason": ""
+          },
+          "notice_date": {
+            "value": "April 1, 2026",
+            "reason": ""
+          },
+          "response_deadline": {
+            "value": "April 15, 2026",
+            "reason": ""
+          },
+          "key_amount_or_address": {
+            "value": "UNCERTAIN",
+            "reason": "No specific amount or address is visible in the provided text."
+          }
+        },
+        "elapsed_s": 28.61
+      },
+      {
+        "raw": "{\n  \"document_type\": \"Notice\",\n  \"holder_name\": {\n    \"value\": \"Maria Gonzalez-Raynes\",\n    \"reason\": \"\"\n  },\n  \"notice_date\": {\n    \"value\": \"April 1, 2026\",\n    \"reason\": \"\"\n  },\n  \"response_deadline\": {\n    \"value\": \"April 15, 2026\",\n    \"reason\": \"\"\n  },\n  \"key_amount_or_address\": {\n    \"value\": \"UNCERTAIN\",\n    \"reason\": \"No specific amount or address is visible in the provided text.\"\n  }\n}",
+        "parsed": {
+          "document_type": "Notice",
+          "holder_name": {
+            "value": "Maria Gonzalez-Raynes",
+            "reason": ""
+          },
+          "notice_date": {
+            "value": "April 1, 2026",
+            "reason": ""
+          },
+          "response_deadline": {
+            "value": "April 15, 2026",
+            "reason": ""
+          },
+          "key_amount_or_address": {
+            "value": "UNCERTAIN",
+            "reason": "No specific amount or address is visible in the provided text."
+          }
+        },
+        "elapsed_s": 31.6
+      }
+    ]
+  }
+]

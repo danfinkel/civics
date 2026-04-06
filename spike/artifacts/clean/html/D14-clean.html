@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D14 — Second Lease Same Address (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@400;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #ccc9c0; font-family: 'Libre Baskerville', Georgia, serif; padding: 40px 20px; }
+  .page {
+    background: #fefefe; width: 8.5in; min-height: 11in; margin: 0 auto; padding: 0.85in 1in 1in 1in;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18); position: relative;
+  }
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute; bottom: 0.4in; left: 50%; transform: translateX(-50%);
+    font-family: 'Source Sans 3', sans-serif; font-size: 8pt; color: #bbb; letter-spacing: 0.12em; white-space: nowrap;
+  }
+  .doc-title { text-align: center; margin-bottom: 20px; }
+  .doc-title h1 { font-family: 'Source Sans 3', sans-serif; font-size: 14pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .doc-title .subtitle { font-family: 'Source Sans 3', sans-serif; font-size: 9pt; color: #666; margin-top: 4px; }
+  .party-block {
+    border: 1px solid #ccc; padding: 14px 18px; margin-bottom: 16px; background: #f9f8f6;
+    font-family: 'Source Sans 3', sans-serif; font-size: 9.5pt; line-height: 1.65;
+  }
+  .party-block .pb-title { font-size: 8.5pt; font-weight: 700; text-transform: uppercase; color: #555; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+  .section { font-size: 10pt; line-height: 1.65; margin-bottom: 14px; color: #1a1a1a; }
+  .section h2 { font-family: 'Source Sans 3', sans-serif; font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #2d3748; margin-bottom: 6px; letter-spacing: 0.04em; }
+  .keybox { border: 2px solid #2c5282; padding: 12px 16px; background: #ebf8ff; margin: 16px 0; font-family: 'Source Sans 3', sans-serif; font-size: 9.5pt; }
+  .keybox strong { color: #2c5282; }
+  @media print { body { background: #fff; } .page { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="doc-title">
+    <h1>Residential Lease Agreement</h1>
+    <div class="subtitle">Synthetic one-page lease — duplicate-address scenario for registration testing</div>
+  </div>
+
+  <div class="party-block">
+    <div class="pb-title">Parties</div>
+    <p><strong>Landlord:</strong> Harbor View Properties LLC, a Massachusetts limited liability company, by its manager Elena Vostok</p>
+    <p style="margin-top:8px;"><strong>Tenant:</strong> Maria Gonzalez-Reyes</p>
+  </div>
+
+  <div class="section">
+    <h2>1. Premises</h2>
+    <p>The Landlord leases to the Tenant the residential unit located at <strong>247 Elm Street, Apartment 3B, Boston, Massachusetts 02119</strong> (the “Premises”).</p>
+  </div>
+
+  <div class="keybox">
+    <strong>Key terms:</strong> Lease start <strong>February 1, 2026</strong> · Lease end <strong>January 31, 2027</strong> · Monthly rent <strong>$1,650.00</strong> · Security deposit <strong>$1,650.00</strong>
+  </div>
+
+  <div class="section">
+    <h2>2. Note for test scenarios</h2>
+    <p>This synthetic lease references the <strong>same street address and unit</strong> as another synthetic lease in the artifact set (D05) but names a <strong>different landlord entity</strong>. For school registration rules that require two residency proofs from <em>different categories</em>, two leases for the same address may still count as the same category.</p>
+  </div>
+
+  <div class="section" style="margin-top:24px;font-family:'Source Sans 3',sans-serif;font-size:9pt;color:#718096;">
+    Signed under seal (synthetic) · HV-LEASE-2026-14 · Not legally binding
+  </div>
+</div>
+</body>
+</html>

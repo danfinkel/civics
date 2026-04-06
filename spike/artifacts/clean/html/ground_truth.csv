@@ -1,0 +1,125 @@
+artifact_id,field_name,expected_value,confidence_floor,notes
+D01,notice_date,2026-04-01,high,Top of notice header — prominently displayed
+D01,response_deadline,2026-04-15,high,Bolded in deadline box; 14 days from notice date
+D01,requested_category,earned_income,high,Stated in notice title and table
+D01,consequence,case_closure,high,Must be extracted from consequence box — verbatim or equivalent
+D01,caseworker_name,James T. Patel,high,In both meta block and signature
+D01,caseworker_phone,(617) 555-0192,medium,In signature block
+D01,office_address,"601 Tremont Street, Suite 400, Boston, MA 02118",medium,In letterhead and submission instructions
+D01,case_number,FAKE-2026-0042,high,In case number bar and body text
+D01,program_type,SNAP,high,Stated in case number bar and body text
+D01,recipient_name,Maria Gonzalez-Reyes,high,In recipient block and salutation
+D03,employer_name,Synthetic Corp LLC,high,Company header — largest text on page
+D03,employee_name,Maria Gonzalez-Reyes,high,Employee info row
+D03,pay_period_start,2026-03-15,high,Pay period cell
+D03,pay_period_end,2026-03-28,high,Pay period cell; within valid 30-day window for D01
+D03,pay_date,2026-03-28,high,Pay date cell — this is the key date for income verification
+D03,gross_income,$1847.50,high,Earnings subtotal row — prominently displayed
+D03,net_income,$1324.85,high,Net pay box
+D03,ytd_gross,$10258.75,medium,YTD summary row
+D03,regular_hours,72.0,medium,Earnings table
+D03,overtime_hours,5.5,medium,Earnings table
+D03,employee_id,EMP-FAKE-0088,low,Secondary field; model may skip
+D03,ssn_masked,XXX-XX-1234,low,Masked; model should report as masked not attempt to read
+D04,employer_name,Synthetic Corp LLC,high,Same as D03
+D04,employee_name,Maria Gonzalez-Reyes,high,Same as D03
+D04,pay_period_start,2025-11-15,high,4 months before D01 notice date — outside valid window
+D04,pay_period_end,2025-11-28,high,4 months before D01 notice date — outside valid window
+D04,pay_date,2025-11-28,high,KEY FIELD: this date is ~4 months before April 1 2026 notice — should FAIL 30-day window check
+D04,gross_income,$1847.50,high,Same as D03 — income amount is valid but date is not
+D04,net_income,$1324.85,high,Same as D03
+D04,category_assessment,likely_does_not_satisfy,high,Gold answer: stale proof — pay date outside 30-day window for D01 notice date
+D05,landlord_name,James T. Whitmore Properties LLC,high,In parties block and signature
+D05,tenant_name,Maria Gonzalez-Reyes,high,In parties block and signature
+D05,property_address,"247 Elm Street, Apartment 3B, Boston, Massachusetts 02119",high,In premises section 1.1 — full address
+D05,lease_start_date,2026-02-01,high,In key terms box and section 2.1
+D05,lease_end_date,2027-01-31,high,In key terms box and section 2.1
+D05,monthly_rent,$1650.00,high,In key terms box and section 3.1
+D05,lease_term,12 months,high,In key terms box
+D05,security_deposit,$1650.00,medium,Section 4.1
+D05,additional_occupants,Sofia Ramirez-Chen,medium,Section 5.1 — minor child named
+D05,category_assessment,likely_satisfies,high,Gold answer: strong residency proof — current lease with full address match
+D06,utility_company,Synthetic Electric Co.,high,Company name in header
+D06,account_holder,Maria Gonzalez-Reyes,high,Account band
+D06,service_address,"247 Elm Street, Apt 3B, Boston, MA 02119",high,Account band — must match D05 exactly
+D06,billing_period_start,2026-03-01,high,Account band
+D06,billing_period_end,2026-03-31,high,Account band — within 90 days of D01 notice
+D06,amount_due,$94.17,high,Amount due banner
+D06,due_date,2026-04-18,high,Amount due banner
+D06,account_number,SEC-FAKE-448821,medium,Header
+D06,category_assessment,likely_satisfies,high,Gold answer: utility bill with matching address — strong residency proof
+D07,carrier_name,Synthetic Mobile,high,Header
+D07,account_holder,Maria Gonzalez-Reyes,high,Account band
+D07,billing_address,"247 Elm Street, Apt 3B, Boston, MA 02119",high,Account band — matches D05/D06
+D07,billing_period_start,2026-03-01,high,Account band
+D07,billing_period_end,2026-03-31,high,Account band
+D07,amount_due,$78.43,high,Summary strip
+D07,due_date,2026-04-20,medium,Summary strip
+D07,category_assessment,residency_ambiguous,high,Gold answer: policy-dependent — some DTA offices accept phone bills some do not. Model should flag as uncertain not assert.
+D07,confidence_floor,medium,high,Model should NOT return high confidence on residency assessment for this document
+D16,utility_company,Synthetic Electric Co.,high,Same as D06 — all values identical
+D16,account_holder,Maria Gonzalez-Reyes,high,Same as D06
+D16,service_address,"247 Elm Street, Apt 3B, Boston, MA 02119",high,Same as D06
+D16,billing_period_start,2026-03-01,high,Same as D06
+D16,billing_period_end,2026-03-31,high,Same as D06
+D16,amount_due,$94.17,high,Same as D06
+D16,document_language,Spanish,high,Entire document in Spanish — tests multilingual handling
+D16,category_assessment,likely_satisfies,high,Same as D06 — language should not affect assessment
+D02,notice_date,2026-04-01,high,Notice meta block — same calendar day as D01 for cross-artifact timing tests
+D02,case_number,FAKE-2026-0888,high,Case number bar — distinct from D01 FAKE-2026-0042
+D02,documentation_submission_deadline,2026-04-22,high,Red deadline box — proofs due date for income/residency/expenses
+D02,interview_date,2026-04-10,high,Blue interview box — intentionally different from documentation deadline
+D02,interview_time,10:30 AM,medium,Stated in interview box
+D02,caseworker_name,Lena M. Okonkwo,high,Body text and meta
+D02,requested_categories,"earned_income, residency, household_expenses",high,Three distinct rows in recert documentation table — order matches document
+D02,signal_note,documentation_deadline_differs_from_interview_date,high,Gold: model must not conflate April 10 interview with April 22 document deadline
+D08,purported_author,Jim,medium,Handwritten signature line only — no printed landlord legal name
+D08,subject_name,Maria Gonzalez-Reyes,high,Body of handwritten note
+D08,subject_address,"247 Elm St #3B Boston",high,Abbreviated street vs formal D05 address — fuzzy match expected
+D08,category_assessment,invalid_proof,high,Gold: informal handwritten note without letterhead or notarization — insufficient as formal residency proof
+D09,holder_name,Maria Gonzalez-Reyes,high,Card name line
+D09,date_of_birth,1988-03-12,high,Listed as March 12 1988
+D09,id_number,MA-FAKE-8821,high,ID number field — clearly synthetic format per plan
+D09,expiry_date,2030-01-31,high,January 31 2030
+D09,address_on_id,"247 Elm St Apt 3B, Boston, MA 02119",high,Should align with D05/D06 service address
+D09,document_type_hint,synthetic_state_id,high,Header says sample credential — not real MA OUI design
+D10,agency_name,Synthetic Benefits Office,high,Letterhead — Housing Assistance Division
+D10,recipient_name,Maria Gonzalez-Reyes,high,Salutation
+D10,benefit_type,housing_assistance,high,Award box — explicitly not wages
+D10,monthly_benefit_amount,$812.00,high,Award box prominent figure
+D10,effective_date,2026-04-01,high,Award box effective date
+D10,case_number,SBO-HA-2026-44102,high,Meta block
+D10,category_assessment_vs_earned_income,likely_does_not_satisfy,high,Gold: government housing benefit letter is NOT earned-income proof for D01-style requests
+D11,residency_rule,two_proofs_two_different_categories,high,Section 2 — explicitly states two documents from different categories
+D11,checklist_includes_proof_of_age,yes,high,Section 1
+D11,checklist_includes_two_residency_proofs,yes,high,Section 2 — different categories required
+D11,checklist_includes_immunization,yes,high,Section 3 — example vaccines named
+D11,checklist_includes_grade_placement_if_applicable,yes,medium,Section 4
+D11,document_nature,synthetic_checklist_not_official_bps_form,high,Footer and title — paraphrase for testing only
+D12,child_name,Sofia Ramirez-Chen,high,Certificate table
+D12,date_of_birth,2018-07-08,high,July 8 2018
+D12,place_of_birth,Boston,high,Place of birth — Massachusetts
+D12,registration_number,MA-VITAL-FAKE-7783401,high,State file number row
+D12,parent_name_mother,Maria Gonzalez-Reyes,high,Parent row
+D12,parent_name_father,Marcus A. Ramirez,high,Parent row
+D13,patient_name,Sofia Ramirez-Chen,high,Patient band
+D13,date_of_birth,2018-07-08,high,Must match D12
+D13,provider_name,Synthetic Pediatrics LLC,high,Header
+D13,vaccine_mmr_date,2018-09-14,high,Table row MMR
+D13,vaccine_dtap_date,2018-08-02,high,Table row DTaP
+D13,vaccine_varicella_date,2018-09-14,high,Table row Varicella
+D13,vaccine_hepb_date,2018-07-18,high,Table row Hepatitis B
+D14,landlord_entity,Harbor View Properties LLC,high,Parties block — different from D05 landlord
+D14,tenant_name,Maria Gonzalez-Reyes,high,Parties block
+D14,property_address,"247 Elm Street, Apartment 3B, Boston, Massachusetts 02119",high,Same unit as D05 — duplicate-address scenario
+D14,lease_start_date,2026-02-01,high,Key terms box — matches D05 timeline
+D14,monthly_rent,$1650.00,high,Key terms box
+D14,category_assessment_bps_two_leases,same_residency_category_duplicate,high,Gold: two leases same address count as same category for typical two-proof rules; flag duplicate-category issue
+D15,affiant_name,Patricia L. Okonkwo,high,Opening affidavit sentence
+D15,host_address,"247 Elm Street, Apartment 3B, Boston, Massachusetts 02119",high,Must match D05/D06/D14 address
+D15,child_name,Sofia Ramirez-Chen,high,Affidavit body
+D15,residency_start_date,2026-02-01,high,States continuous residence since this date
+D15,relationship_to_child,host_family_head_of_household,medium,Affiant is leaseholder; child linked to Maria Gonzalez-Reyes
+D15,notary_name,R. Kim,medium,Synthetic notary block
+D15,notary_commission_expiry,2028-12-31,high,December 31 2028
+D15,document_type,host_family_affidavit,high,Structured notary section — synthetic BPS-style scenario

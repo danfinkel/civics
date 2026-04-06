@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D06 — Utility Bill (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #c8c5bc;
+    font-family: 'IBM Plex Sans', 'Helvetica Neue', sans-serif;
+    padding: 40px 20px;
+  }
+
+  .page {
+    background: #fff;
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute;
+    bottom: 0.4in;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8pt;
+    color: #bbb;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  /* Header */
+  .utility-header {
+    background: #1B4F72;
+    color: #fff;
+    padding: 20px 32px 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .company-block .company-name {
+    font-size: 18pt;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .company-block .company-tag {
+    font-size: 8.5pt;
+    color: #a8c8e8;
+    margin-top: 2px;
+    font-weight: 300;
+  }
+
+  .bill-label-block {
+    text-align: right;
+  }
+
+  .bill-label-block .bill-type {
+    font-size: 13pt;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .bill-label-block .account-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9pt;
+    color: #a8c8e8;
+    margin-top: 4px;
+  }
+
+  .accent-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #F39C12 0%, #F7DC6F 100%);
+  }
+
+  /* Account + address row */
+  .info-band {
+    background: #EBF5FB;
+    padding: 14px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid #D6EAF8;
+  }
+
+  .ib-cell .ib-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #7F8C8D;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 3px;
+  }
+
+  .ib-cell .ib-value {
+    font-size: 9.5pt;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+
+  /* Amount due banner */
+  .amount-banner {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 2px solid #D6EAF8;
+  }
+
+  .ab-cell {
+    padding: 16px 24px;
+    border-right: 1px solid #D6EAF8;
+    text-align: center;
+  }
+
+  .ab-cell:last-child { border-right: none; }
+
+  .ab-cell .ab-label {
+    font-size: 8pt;
+    font-weight: 700;
+    color: #7F8C8D;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+  }
+
+  .ab-cell .ab-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16pt;
+    font-weight: 600;
+    color: #1B4F72;
+  }
+
+  .ab-cell.highlight .ab-value {
+    color: #C0392B;
+  }
+
+  .ab-cell .ab-sub {
+    font-size: 8pt;
+    color: #888;
+    margin-top: 3px;
+  }
+
+  /* Main content */
+  .bill-body {
+    padding: 20px 32px 60px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .section-head {
+    font-size: 8.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #1B4F72;
+    border-bottom: 2px solid #D6EAF8;
+    padding-bottom: 4px;
+    margin-bottom: 10px;
+  }
+
+  .line-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+
+  .line-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #EBF5FB;
+    color: #1a1a1a;
+    line-height: 1.4;
+  }
+
+  .line-table td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9pt;
+  }
+
+  .line-table tr:last-child td {
+    border-bottom: none;
+    font-weight: 600;
+    background: #EBF5FB;
+  }
+
+  .usage-bar-wrap {
+    margin: 12px 0 4px 0;
+  }
+
+  .usage-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .usage-bar-bg {
+    background: #D6EAF8;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .usage-bar-fill {
+    background: #1B4F72;
+    height: 100%;
+    width: 62%;
+    border-radius: 5px;
+  }
+
+  .payment-options {
+    grid-column: 1 / -1;
+    border: 1px solid #D6EAF8;
+    padding: 12px 16px;
+    background: #EBF5FB;
+  }
+
+  .payment-options .po-title {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #1B4F72;
+    margin-bottom: 6px;
+  }
+
+  .po-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    font-size: 8.5pt;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  .remit-stub {
+    grid-column: 1 / -1;
+    border-top: 2px dashed #aaa;
+    margin-top: 20px;
+    padding-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 8.5pt;
+    color: #444;
+  }
+
+  .remit-stub .rs-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 3px;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="utility-header">
+    <div class="company-block">
+      <div class="company-name">Synthetic Electric Co.</div>
+      <div class="company-tag">Your Trusted Energy Provider &nbsp;|&nbsp; Serving Greater Boston Since 1948 (Synthetic)</div>
+    </div>
+    <div class="bill-label-block">
+      <div class="bill-type">Electric &amp; Gas Bill</div>
+      <div class="account-num">Account No: SEC-FAKE-448821</div>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+
+  <!-- ACCOUNT INFO BAND -->
+  <div class="info-band">
+    <div class="ib-cell">
+      <div class="ib-label">Service Address</div>
+      <div class="ib-value">247 Elm Street, Apt 3B<br>Boston, MA 02119</div>
+    </div>
+    <div class="ib-cell">
+      <div class="ib-label">Account Holder</div>
+      <div class="ib-value">Maria Gonzalez-Reyes<br>Account since Feb 2026</div>
+    </div>
+    <div class="ib-cell">
+      <div class="ib-label">Billing Period</div>
+      <div class="ib-value">March 1, 2026 –<br>March 31, 2026</div>
+    </div>
+  </div>
+
+  <!-- AMOUNT DUE BANNER -->
+  <div class="amount-banner">
+    <div class="ab-cell highlight">
+      <div class="ab-label">Amount Due</div>
+      <div class="ab-value">$94.17</div>
+      <div class="ab-sub">Total charges this period</div>
+    </div>
+    <div class="ab-cell">
+      <div class="ab-label">Due Date</div>
+      <div class="ab-value" style="font-size:14pt;">April 18, 2026</div>
+      <div class="ab-sub">Pay by this date to avoid late fee</div>
+    </div>
+    <div class="ab-cell">
+      <div class="ab-label">Previous Balance</div>
+      <div class="ab-value" style="font-size:14pt; color:#27AE60;">$0.00</div>
+      <div class="ab-sub">Paid in full — thank you</div>
+    </div>
+  </div>
+
+  <!-- BILL BODY -->
+  <div class="bill-body">
+
+    <!-- ELECTRIC CHARGES -->
+    <div>
+      <div class="section-head">Electric Charges</div>
+      <table class="line-table">
+        <tr><td>Basic service charge</td><td>$9.00</td></tr>
+        <tr><td>Energy charge (418 kWh @ $0.128)</td><td>$53.50</td></tr>
+        <tr><td>Distribution charge</td><td>$8.22</td></tr>
+        <tr><td>Transmission charge</td><td>$4.11</td></tr>
+        <tr><td>MA renewable energy charge</td><td>$1.67</td></tr>
+        <tr><td><strong>Electric subtotal</strong></td><td><strong>$76.50</strong></td></tr>
+      </table>
+
+      <div class="usage-bar-wrap">
+        <div class="usage-bar-label">
+          <span>Usage this period: 418 kWh</span>
+          <span>12-month avg: 671 kWh</span>
+        </div>
+        <div class="usage-bar-bg"><div class="usage-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- GAS CHARGES -->
+    <div>
+      <div class="section-head">Gas Charges</div>
+      <table class="line-table">
+        <tr><td>Basic service charge</td><td>$7.00</td></tr>
+        <tr><td>Gas supply (4.2 therms @ $1.28)</td><td>$5.38</td></tr>
+        <tr><td>Distribution charge</td><td>$3.12</td></tr>
+        <tr><td>Pipeline cost recovery</td><td>$1.00</td></tr>
+        <tr><td>MA energy efficiency charge</td><td>$1.17</td></tr>
+        <tr><td><strong>Gas subtotal</strong></td><td><strong>$17.67</strong></td></tr>
+      </table>
+    </div>
+
+    <!-- PAYMENT OPTIONS -->
+    <div class="payment-options">
+      <div class="po-title">Payment Options</div>
+      <div class="po-grid">
+        <div><strong>Online</strong><br>syntheticelectric.fake/pay<br>(Synthetic URL — not real)</div>
+        <div><strong>By Phone</strong><br>(800) 555-0280<br>24 hours / 7 days</div>
+        <div><strong>By Mail</strong><br>Synthetic Electric Co.<br>PO Box FAKE-9900<br>Boston, MA 02201</div>
+      </div>
+    </div>
+
+    <!-- REMIT STUB -->
+    <div class="remit-stub">
+      <div>
+        <div class="rs-label">Detach and Return with Payment</div>
+        <div>Maria Gonzalez-Reyes &nbsp;|&nbsp; Account: SEC-FAKE-448821</div>
+        <div>247 Elm Street, Apt 3B, Boston, MA 02119</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rs-label">Amount Enclosed</div>
+        <div style="border-bottom: 1px solid #aaa; width: 120px; height: 22px; margin-top: 4px;"></div>
+        <div style="margin-top:4px;">Due: April 18, 2026</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

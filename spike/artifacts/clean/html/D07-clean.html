@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D07 — Cell Phone Bill (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #c4c1b8;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    padding: 40px 20px;
+  }
+
+  .page {
+    background: #fff;
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute;
+    bottom: 0.4in;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8pt;
+    color: #bbb;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+
+  .carrier-header {
+    background: #E8173A;
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .carrier-name {
+    font-size: 20pt;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .carrier-tag {
+    font-size: 8.5pt;
+    color: rgba(255,255,255,0.7);
+    margin-top: 2px;
+    font-weight: 300;
+  }
+
+  .bill-ref {
+    text-align: right;
+    font-size: 8.5pt;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.7;
+  }
+
+  .accent-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #FF6B6B, #FFD93D);
+  }
+
+  .account-band {
+    background: #FFF5F5;
+    padding: 14px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    border-bottom: 1px solid #FFD6D6;
+  }
+
+  .ab-cell .abl {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 2px;
+  }
+
+  .ab-cell .abv {
+    font-size: 9.5pt;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.4;
+  }
+
+  .summary-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 2px solid #FFD6D6;
+  }
+
+  .ss-cell {
+    padding: 16px 24px;
+    border-right: 1px solid #FFD6D6;
+    text-align: center;
+  }
+
+  .ss-cell:last-child { border-right: none; }
+
+  .ss-label {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+
+  .ss-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16pt;
+    font-weight: 600;
+    color: #E8173A;
+  }
+
+  .ss-sub {
+    font-size: 7.5pt;
+    color: #aaa;
+    margin-top: 2px;
+  }
+
+  .bill-body {
+    padding: 20px 32px 60px 32px;
+  }
+
+  .section-head {
+    font-size: 8.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #E8173A;
+    border-bottom: 2px solid #FFD6D6;
+    padding-bottom: 4px;
+    margin: 18px 0 10px 0;
+  }
+
+  .section-head:first-child { margin-top: 0; }
+
+  .line-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin-bottom: 4px;
+  }
+
+  .line-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #FFF0F0;
+    color: #1a1a1a;
+    line-height: 1.4;
+  }
+
+  .line-table td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .line-table tr.subtotal td {
+    font-weight: 600;
+    background: #FFF5F5;
+    border-top: 1px solid #FFD6D6;
+  }
+
+  .line-table tr.subtotal td:first-child { color: #E8173A; }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .policy-note {
+    background: #FFF9E6;
+    border: 1px solid #FFE082;
+    padding: 10px 14px;
+    margin-top: 16px;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    color: #5D4037;
+  }
+
+  .policy-note .pn-title {
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #E65100;
+    margin-bottom: 4px;
+  }
+
+  .remit-stub {
+    border-top: 2px dashed #aaa;
+    margin-top: 20px;
+    padding-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 8.5pt;
+    color: #444;
+  }
+
+  .rs-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 3px;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="carrier-header">
+    <div>
+      <div class="carrier-name">Synthetic Mobile</div>
+      <div class="carrier-tag">Wireless Service Provider &nbsp;|&nbsp; Synthetic Network — Not a Real Carrier</div>
+    </div>
+    <div class="bill-ref">
+      Monthly Statement<br>
+      Account: SM-FAKE-778821<br>
+      Statement Date: April 1, 2026
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+
+  <!-- ACCOUNT BAND -->
+  <div class="account-band">
+    <div class="ab-cell">
+      <div class="abl">Account Holder</div>
+      <div class="abv">Maria Gonzalez-Reyes</div>
+    </div>
+    <div class="ab-cell">
+      <div class="abl">Billing Address</div>
+      <div class="abv">247 Elm Street, Apt 3B<br>Boston, MA 02119</div>
+    </div>
+    <div class="ab-cell">
+      <div class="abl">Billing Period</div>
+      <div class="abv">March 1 – March 31, 2026</div>
+    </div>
+    <div class="ab-cell">
+      <div class="abl">Account Status</div>
+      <div class="abv" style="color:#27AE60; font-weight:600;">Active — Good Standing</div>
+    </div>
+  </div>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip">
+    <div class="ss-cell">
+      <div class="ss-label">Total Amount Due</div>
+      <div class="ss-value">$78.43</div>
+      <div class="ss-sub">Includes all taxes and fees</div>
+    </div>
+    <div class="ss-cell">
+      <div class="ss-label">Payment Due Date</div>
+      <div class="ss-value" style="font-size:13pt; color:#333;">April 20, 2026</div>
+      <div class="ss-sub">AutoPay enrolled</div>
+    </div>
+    <div class="ss-cell">
+      <div class="ss-label">Lines on Account</div>
+      <div class="ss-value" style="color:#333; font-size:20pt;">1</div>
+      <div class="ss-sub">(617) 555-FAKE</div>
+    </div>
+  </div>
+
+  <!-- BILL BODY -->
+  <div class="bill-body">
+    <div class="two-col">
+
+      <!-- PLAN CHARGES -->
+      <div>
+        <div class="section-head">Plan Charges</div>
+        <table class="line-table">
+          <tr><td>Unlimited Talk &amp; Text Plan</td><td>$45.00</td></tr>
+          <tr><td>5G Data Add-on (10GB)</td><td>$15.00</td></tr>
+          <tr><td>Device protection plan</td><td>$8.00</td></tr>
+          <tr class="subtotal"><td>Plan subtotal</td><td>$68.00</td></tr>
+        </table>
+
+        <div class="section-head" style="margin-top:16px;">Taxes &amp; Fees</div>
+        <table class="line-table">
+          <tr><td>Federal Universal Service Fund</td><td>$2.72</td></tr>
+          <tr><td>MA state communications tax</td><td>$3.40</td></tr>
+          <tr><td>Municipal 911 fee</td><td>$1.50</td></tr>
+          <tr><td>Regulatory recovery fee</td><td>$2.81</td></tr>
+          <tr class="subtotal"><td>Taxes &amp; fees subtotal</td><td>$10.43</td></tr>
+        </table>
+      </div>
+
+      <!-- USAGE SUMMARY -->
+      <div>
+        <div class="section-head">Usage Summary — (617) 555-FAKE</div>
+        <table class="line-table">
+          <tr><td>Voice minutes used</td><td>Unlimited</td></tr>
+          <tr><td>Text messages sent/received</td><td>Unlimited</td></tr>
+          <tr><td>Data used this period</td><td>7.3 GB</td></tr>
+          <tr><td>Data remaining</td><td>2.7 GB</td></tr>
+          <tr><td>International calls</td><td>$0.00</td></tr>
+          <tr><td>Roaming charges</td><td>$0.00</td></tr>
+        </table>
+
+        <div class="section-head" style="margin-top:16px;">Account Summary</div>
+        <table class="line-table">
+          <tr><td>Previous balance</td><td>$78.43</td></tr>
+          <tr><td>Payment received Mar 20</td><td style="color:#27AE60;">–$78.43</td></tr>
+          <tr><td>Current charges</td><td>$78.43</td></tr>
+          <tr class="subtotal"><td>Total due</td><td>$78.43</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- POLICY NOTE -->
+    <div class="policy-note">
+      <div class="pn-title">Note on Use as Proof of Residency</div>
+      Cell phone bills are accepted as proof of residency by some Massachusetts government agencies and institutions, but acceptance varies by office and program. Some DTA offices and school districts accept wireless carrier bills as one form of residency documentation; others require utility bills (electric, gas, water) or official mail. If using this bill as proof of residency, confirm the specific requirements with the relevant agency before submission. This note is included for informational purposes and is part of the synthetic document design.
+    </div>
+
+    <!-- REMIT STUB -->
+    <div class="remit-stub">
+      <div>
+        <div class="rs-label">Payment Stub — Detach and Return</div>
+        <div>Maria Gonzalez-Reyes &nbsp;|&nbsp; SM-FAKE-778821</div>
+        <div>247 Elm Street, Apt 3B, Boston, MA 02119</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rs-label">Amount Due</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size:13pt; font-weight:600;">$78.43</div>
+        <div>Due: April 20, 2026</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

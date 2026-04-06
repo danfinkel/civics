@@ -1,0 +1,107 @@
+{
+  "description": "Field-level hallucination analysis for design phase reference",
+  "generated": "2026-04-05",
+  "source": "day1_e4b_full_results.jsonl",
+  "high_confidence_fields": {
+    "description": "Fields that extracted reliably across clean and degraded variants",
+    "fields": [
+      "employer_name",
+      "employee_name",
+      "utility_company",
+      "tenant_name",
+      "monthly_rent",
+      "lease_term",
+      "case_number",
+      "caseworker_name"
+    ],
+    "design_implication": "Auto-accept these fields; minimal UX friction"
+  },
+  "medium_confidence_fields": {
+    "description": "Fields that extracted correctly on clean but degraded on degraded variants",
+    "fields": [
+      "property_address",
+      "service_address",
+      "landlord_name"
+    ],
+    "design_implication": "Show to user with medium-confidence indicator"
+  },
+  "low_confidence_fields": {
+    "description": "Fields prone to hallucination or format issues",
+    "fields": [
+      "notice_date",
+      "response_deadline",
+      "pay_period_start",
+      "pay_period_end",
+      "pay_date",
+      "requested_category",
+      "interview_date",
+      "documentation_submission_deadline"
+    ],
+    "design_implication": "Always show to user; require explicit confirmation"
+  },
+  "format_sensitivities": {
+    "dates": {
+      "issue": "Model prefers 'Month Day, Year' over ISO 'YYYY-MM-DD'",
+      "example": "April 1, 2026 vs 2026-04-01",
+      "mitigation": "Post-process both extracted and ground truth to common format"
+    },
+    "names": {
+      "issue": "Hyphenated surnames truncated",
+      "example": "Gonzalez-Reyes → Gonzalez",
+      "mitigation": "Fuzzy matching with Levenshtein distance"
+    },
+    "phone_numbers": {
+      "issue": "Inconsistent parentheses/spaces",
+      "example": "617) 555-0192 vs (617) 555-0192",
+      "mitigation": "Normalization regex"
+    },
+    "categories": {
+      "issue": "Model expands terse categories into full sentences",
+      "example": "earned_income → 'Earned Income (Required)'",
+      "mitigation": "Map to canonical values via string similarity"
+    }
+  },
+  "document_type_learnings": {
+    "pay_stubs": {
+      "strengths": ["employer_name", "employee_name", "gross_income", "net_income"],
+      "weaknesses": ["pay_period dates", "YTD vs current period confusion"]
+    },
+    "leases": {
+      "strengths": ["tenant_name", "monthly_rent", "lease_term"],
+      "weaknesses": ["landlord_entity parsing", "property_address formatting"]
+    },
+    "utility_bills": {
+      "strengths": ["utility_company", "account_holder", "amount_due"],
+      "weaknesses": ["billing_period dates", "service_address"]
+    },
+    "government_notices": {
+      "strengths": ["caseworker_name", "case_number", "program_type"],
+      "weaknesses": ["all date fields", "requested_category"]
+    },
+    "checklists": {
+      "strengths": ["document_nature detection"],
+      "weaknesses": ["complex layouts when degraded"]
+    }
+  },
+  "confidence_heuristics": {
+    "description": "Rules of thumb for confidence scoring without model changes",
+    "heuristics": [
+      {
+        "name": "length_check",
+        "rule": "If extracted value length differs significantly from typical, flag for review"
+      },
+      {
+        "name": "date_plausibility",
+        "rule": "If date is in the future or >5 years in past, flag for review"
+      },
+      {
+        "name": "multi_pass_agreement",
+        "rule": "Run extraction twice; flag fields that differ between runs"
+      },
+      {
+        "name": "format_consistency",
+        "rule": "Flag if phone/date format doesn't match document locale patterns"
+      }
+    ]
+  }
+}

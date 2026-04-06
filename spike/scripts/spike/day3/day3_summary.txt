@@ -1,0 +1,63 @@
+============================================================
+TRACK A — SNAP Proof-Pack Builder
+============================================================
+
+Notice Category Extraction Accuracy:
+  Correct: 2/2 (100.0%)
+  Average Score: 2.00 (target: ≥85%)
+  Status: ✓ PASS
+
+Deadline Extraction Accuracy:
+  Correct: 2/2 (100.0%)
+  Average Score: 2.00 (target: ≥85%)
+  Status: ✓ PASS
+
+Proof-Pack Assessment Accuracy:
+  Correct: 7/11 (63.6%)
+  Normalized Score: 66.7% (target: ≥70%)
+  Status: ✗ FAIL
+
+Missing-Item Detection Recall:
+  Detected: 1/3 (33.3%)
+  Status: ✗ FAIL
+
+Abstention on Blurry Notice (A6):
+  Correct: 0/1 (0.0%)
+  Status: ✗ FAIL
+
+✓ No critical flags
+
+============================================================
+TRACK B — BPS Packet Checker
+============================================================
+
+Requirement Status Accuracy:
+  Correct: 32/33 (97.0%)
+  Normalized Score: 85.9% (target: ≥70%)
+  Status: ✓ PASS
+
+Missing-Item Detection Recall:
+  Detected: 2/3 (66.7%)
+  Status: ✗ FAIL
+
+Duplicate Category Detection (B4):
+  Correct: 1/1 (100.0%)
+  Status: ✓ PASS (hard requirement)
+
+Abstention on Ambiguous Docs (B7):
+  Correct: 1/1 (100.0%)
+  Status: ✓ PASS
+
+✓ No critical flags
+
+============================================================
+DAY 3 COMBINED SUMMARY — Day 5 Scoring Table
+============================================================
+
+| Metric | Track A | Track B | Target |
+|--------|---------|---------|--------|
+| Missing-item detection recall | 33% | 67% | ≥80% |
+| Requirement mapping accuracy | 67% | 86% | ≥70% |
+| Abstention on ambiguous inputs | Fail | Pass | ≥80% |
+| Action/deadline extraction | 100% | N/A | ≥85% |
+| Critical false positives | 0 | 0 | 0 |

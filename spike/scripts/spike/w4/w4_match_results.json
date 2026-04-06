@@ -1,0 +1,188 @@
+[
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/clean/D03.pdf",
+    "file_name": "D03.pdf",
+    "proof_category": "EARNED INCOME",
+    "category_definition": "Acceptable earned income proof includes recent pay stubs from the last 30 days, employer letters on company letterhead, or recent self-employment records with income and expense documentation.",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular $1,847.50 $10,258.75\",\n  \"caveats\": \"The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular $1,847.50 $10,258.75",
+          "caveats": "The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof."
+        },
+        "elapsed_s": 21.07
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular $1,847.50 $10,258.75\",\n  \"caveats\": \"The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular $1,847.50 $10,258.75",
+          "caveats": "The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof."
+        },
+        "elapsed_s": 14.59
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular $1,847.50 $10,258.75\",\n  \"caveats\": \"The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular $1,847.50 $10,258.75",
+          "caveats": "The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof."
+        },
+        "elapsed_s": 14.81
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular $1,847.50 $10,258.75\",\n  \"caveats\": \"The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular $1,847.50 $10,258.75",
+          "caveats": "The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof."
+        },
+        "elapsed_s": 15.13
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular $1,847.50 $10,258.75\",\n  \"caveats\": \"The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular $1,847.50 $10,258.75",
+          "caveats": "The document appears to be a pay statement detailing wages, which satisfies the requirement for earned income proof."
+        },
+        "elapsed_s": 16.27
+      }
+    ]
+  },
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/degraded/D03-degraded.jpg",
+    "file_name": "D03-degraded.jpg",
+    "proof_category": "EARNED INCOME",
+    "category_definition": "Acceptable earned income proof includes recent pay stubs from the last 30 days, employer letters on company letterhead, or recent self-employment records with income and expense documentation.",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75\",\n  \"caveats\": \"The document appears to be a pay stub, which serves as valid proof of earned income.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75",
+          "caveats": "The document appears to be a pay stub, which serves as valid proof of earned income."
+        },
+        "elapsed_s": 19.81
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75\",\n  \"caveats\": \"The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75",
+          "caveats": "The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information."
+        },
+        "elapsed_s": 18.9
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75\",\n  \"caveats\": \"The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75",
+          "caveats": "The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information."
+        },
+        "elapsed_s": 19.37
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75\",\n  \"caveats\": \"The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75",
+          "caveats": "The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information."
+        },
+        "elapsed_s": 20.62
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_satisfies\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75\",\n  \"caveats\": \"The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information.\"\n}",
+        "parsed": {
+          "assessment": "likely_satisfies",
+          "confidence": "high",
+          "evidence": "Regular Pay $175.78, Overtime $1.75, Differential $1.75, Total Earnings $1,847.50, Gross Pay $10,258.75",
+          "caveats": "The document appears to be a pay stub/earnings statement, which serves as proof of earned income. The dates provided (March 15, 2026, and March 28, 2026) suggest recent pay information."
+        },
+        "elapsed_s": 22.51
+      }
+    ]
+  },
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/clean/D01.pdf",
+    "file_name": "D01.pdf",
+    "proof_category": "EARNED INCOME",
+    "category_definition": "Acceptable earned income proof includes recent pay stubs from the last 30 days, employer letters on company letterhead, or recent self-employment records with income and expense documentation.",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"assessment\": \"likely_does_not_satisfy\",\n  \"confidence\": \"high\",\n  \"evidence\": \"EARNED INCOME (Required)\\nYou must provide documentation listed below as soon as possible.\",\n  \"caveats\": \"The document is a request for documentation, not the documentation itself. It requires the recipient to submit proof of earned income.\"\n}",
+        "parsed": {
+          "assessment": "likely_does_not_satisfy",
+          "confidence": "high",
+          "evidence": "EARNED INCOME (Required)\nYou must provide documentation listed below as soon as possible.",
+          "caveats": "The document is a request for documentation, not the documentation itself. It requires the recipient to submit proof of earned income."
+        },
+        "elapsed_s": 23.92
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_does_not_satisfy\",\n  \"confidence\": \"high\",\n  \"evidence\": \"EARNED INCOME (Required)\\nYou must submit documentation listed below as soon as possible.\",\n  \"caveats\": \"The document is a request for documentation, not the documentation itself. It does not contain proof of earned income.\"\n}",
+        "parsed": {
+          "assessment": "likely_does_not_satisfy",
+          "confidence": "high",
+          "evidence": "EARNED INCOME (Required)\nYou must submit documentation listed below as soon as possible.",
+          "caveats": "The document is a request for documentation, not the documentation itself. It does not contain proof of earned income."
+        },
+        "elapsed_s": 20.92
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_does_not_satisfy\",\n  \"confidence\": \"high\",\n  \"evidence\": \"EARNED INCOME (Required)\\nYou must submit documentation listed below as soon as possible.\",\n  \"caveats\": \"The document is a request for documentation, not the documentation itself. It does not contain proof of earned income.\"\n}",
+        "parsed": {
+          "assessment": "likely_does_not_satisfy",
+          "confidence": "high",
+          "evidence": "EARNED INCOME (Required)\nYou must submit documentation listed below as soon as possible.",
+          "caveats": "The document is a request for documentation, not the documentation itself. It does not contain proof of earned income."
+        },
+        "elapsed_s": 20.6
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_does_not_satisfy\",\n  \"confidence\": \"high\",\n  \"evidence\": \"EARNED INCOME (Required)\\nYou must submit documentation listed below as soon as possible.\",\n  \"caveats\": \"The document is a request for documentation, not the documentation itself. It does not contain proof of earned income.\"\n}",
+        "parsed": {
+          "assessment": "likely_does_not_satisfy",
+          "confidence": "high",
+          "evidence": "EARNED INCOME (Required)\nYou must submit documentation listed below as soon as possible.",
+          "caveats": "The document is a request for documentation, not the documentation itself. It does not contain proof of earned income."
+        },
+        "elapsed_s": 20.46
+      },
+      {
+        "raw": "{\n  \"assessment\": \"likely_does_not_satisfy\",\n  \"confidence\": \"high\",\n  \"evidence\": \"EARNED INCOME (Required)\\nYou must submit documentation listed below as soon as possible.\",\n  \"caveats\": \"The document is a request for documentation, not the documentation itself. It does not contain proof of earned income.\"\n}",
+        "parsed": {
+          "assessment": "likely_does_not_satisfy",
+          "confidence": "high",
+          "evidence": "EARNED INCOME (Required)\nYou must submit documentation listed below as soon as possible.",
+          "caveats": "The document is a request for documentation, not the documentation itself. It does not contain proof of earned income."
+        },
+        "elapsed_s": 19.93
+      }
+    ]
+  }
+]

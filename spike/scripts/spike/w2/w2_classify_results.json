@@ -1,0 +1,222 @@
+[
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/clean/D01.pdf",
+    "file_name": "D01.pdf",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Department of Transitional Assistance Notice of Earned Income\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Department of Transitional Assistance Notice of Earned Income"
+        },
+        "elapsed_s": 22.91
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Notice of Earned Income\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Notice of Earned Income"
+        },
+        "elapsed_s": 13.49
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Notice of Earned Income\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Notice of Earned Income"
+        },
+        "elapsed_s": 12.98
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Notice of Earned Income\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Notice of Earned Income"
+        },
+        "elapsed_s": 13.1
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Notice of Earned Income\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Notice of Earned Income"
+        },
+        "elapsed_s": 13.05
+      }
+    ]
+  },
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/degraded/D01-degraded.jpg",
+    "file_name": "D01-degraded.jpg",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Department of Transportation is required to verify current household income.\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Department of Transportation is required to verify current household income."
+        },
+        "elapsed_s": 14.35
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Department of Transportation is required to verify current household income.\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Department of Transportation is required to verify current household income."
+        },
+        "elapsed_s": 12.18
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Department of Transportation is required to verify current household income.\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Department of Transportation is required to verify current household income."
+        },
+        "elapsed_s": 11.99
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Department of Transportation is required to verify current household income.\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Department of Transportation is required to verify current household income."
+        },
+        "elapsed_s": 12.11
+      },
+      {
+        "raw": "{\n  \"classification\": \"government_notice\",\n  \"confidence\": \"high\",\n  \"evidence\": \"Department of Transportation is required to verify current household income.\"\n}",
+        "parsed": {
+          "classification": "government_notice",
+          "confidence": "high",
+          "evidence": "Department of Transportation is required to verify current household income."
+        },
+        "elapsed_s": 12.69
+      }
+    ]
+  },
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/clean/D03.pdf",
+    "file_name": "D03.pdf",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains structured data detailing earnings, rates, hours, and deductions for an employee.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains structured data detailing earnings, rates, hours, and deductions for an employee."
+        },
+        "elapsed_s": 14.15
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub."
+        },
+        "elapsed_s": 10.84
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub."
+        },
+        "elapsed_s": 10.79
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub."
+        },
+        "elapsed_s": 10.92
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EMPLOYER, RATE, HOURS, CURRENT, YTD, and PAY, which are characteristic of a pay stub."
+        },
+        "elapsed_s": 11.06
+      }
+    ]
+  },
+  {
+    "file": "/Users/danfinkel/github/civics/spike/artifacts/degraded/D03-degraded.jpg",
+    "file_name": "D03-degraded.jpg",
+    "n_runs": 5,
+    "model": "gemma4:e2b",
+    "temperature": 0.0,
+    "parse_failures": 0,
+    "runs": [
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts."
+        },
+        "elapsed_s": 12.17
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts."
+        },
+        "elapsed_s": 10.75
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts."
+        },
+        "elapsed_s": 10.74
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts."
+        },
+        "elapsed_s": 12.08
+      },
+      {
+        "raw": "{\n  \"classification\": \"pay_stub\",\n  \"confidence\": \"high\",\n  \"evidence\": \"The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts.\"\n}",
+        "parsed": {
+          "classification": "pay_stub",
+          "confidence": "high",
+          "evidence": "The document contains fields such as EARNINGS, DEDUCTIONS, CURRENT, and YTD amounts."
+        },
+        "elapsed_s": 10.85
+      }
+    ]
+  }
+]

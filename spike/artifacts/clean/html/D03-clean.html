@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D03 — Pay Stub (SYNTHETIC)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #c8c5bc;
+    font-family: 'IBM Plex Sans', 'Helvetica Neue', sans-serif;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .page {
+    background: #fff;
+    width: 8.5in;
+    margin: 0 auto;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SYNTHETIC footer watermark */
+  .page::after {
+    content: 'SYNTHETIC DOCUMENT — NOT OFFICIAL';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #f0f0f0;
+    text-align: center;
+    font-size: 8pt;
+    color: #999;
+    letter-spacing: 0.12em;
+    padding: 5px;
+    border-top: 1px solid #ddd;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  /* Company header strip */
+  .company-header {
+    background: #0f2240;
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .company-info .company-name {
+    font-size: 16pt;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .company-info .company-sub {
+    font-size: 8.5pt;
+    color: #a0b4cc;
+    margin-top: 2px;
+  }
+
+  .paystub-label {
+    text-align: right;
+  }
+
+  .paystub-label .label-main {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .paystub-label .label-sub {
+    font-size: 8pt;
+    color: #7a9cbc;
+    margin-top: 3px;
+  }
+
+  /* Accent bar */
+  .accent-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb 0%, #0ea5e9 60%, #38bdf8 100%);
+  }
+
+  /* Employee + period info row */
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .info-cell {
+    padding: 14px 20px;
+    border-right: 1px solid #e2e8f0;
+  }
+
+  .info-cell:last-child { border-right: none; }
+
+  .info-cell .ic-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .info-cell .ic-value {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.4;
+  }
+
+  .info-cell .ic-value-mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  /* Main content area */
+  .main-content {
+    padding: 20px 28px 40px 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .section-title {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #dbeafe;
+  }
+
+  /* Earnings table */
+  .earnings-table, .deductions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+  }
+
+  .earnings-table th, .deductions-table th {
+    background: #f8fafc;
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 8px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+  }
+
+  .earnings-table th:last-child,
+  .deductions-table th:last-child { text-align: right; }
+
+  .earnings-table td, .deductions-table td {
+    padding: 7px 8px;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+    font-size: 9pt;
+    vertical-align: middle;
+  }
+
+  .earnings-table td:last-child,
+  .deductions-table td:last-child {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9pt;
+  }
+
+  .earnings-table tr:nth-child(even) td,
+  .deductions-table tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  .subtotal-row td {
+    background: #eff6ff !important;
+    font-weight: 600;
+    color: #1e3a8a;
+    border-top: 2px solid #bfdbfe;
+  }
+
+  /* Net pay summary */
+  .net-pay-box {
+    grid-column: 1 / -1;
+    background: #0f2240;
+    color: #fff;
+    padding: 16px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+  }
+
+  .net-pay-box .net-label {
+    font-size: 11pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .net-pay-box .net-sub {
+    font-size: 8pt;
+    color: #7a9cbc;
+    margin-top: 2px;
+  }
+
+  .net-pay-box .net-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22pt;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .net-pay-box .net-period-amounts {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+
+  .net-pay-box .period-block {
+    text-align: center;
+  }
+
+  .net-pay-box .period-block .pb-label {
+    font-size: 7.5pt;
+    color: #7a9cbc;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+  }
+
+  .net-pay-box .period-block .pb-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13pt;
+    font-weight: 600;
+  }
+
+  /* YTD summary row */
+  .ytd-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid #e2e8f0;
+    margin-top: 4px;
+  }
+
+  .ytd-cell {
+    padding: 10px 14px;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+  }
+
+  .ytd-cell:last-child { border-right: none; }
+
+  .ytd-cell .ytd-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+
+  .ytd-cell .ytd-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11pt;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  /* Employer / employee details footer */
+  .details-footer {
+    padding: 14px 28px 34px 28px;
+    border-top: 1px solid #e2e8f0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    font-size: 8.5pt;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .details-footer .df-label {
+    font-weight: 700;
+    color: #64748b;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- COMPANY HEADER -->
+  <div class="company-header">
+    <div class="company-info">
+      <div class="company-name">Synthetic Corp LLC</div>
+      <div class="company-sub">89 Industrial Way, Suite 12 &nbsp;|&nbsp; Woburn, MA 01801 &nbsp;|&nbsp; EIN: XX-FAKE001</div>
+    </div>
+    <div class="paystub-label">
+      <div class="label-main">Earnings Statement</div>
+      <div class="label-sub">RETAIN FOR YOUR RECORDS</div>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+
+  <!-- EMPLOYEE / PERIOD INFO ROW -->
+  <div class="info-row">
+    <div class="info-cell">
+      <div class="ic-label">Employee</div>
+      <div class="ic-value">Maria Gonzalez-Reyes</div>
+      <div class="ic-value" style="color:#64748b; font-size:9pt; font-weight:400; margin-top:2px;">Employee ID: EMP-FAKE-0088</div>
+    </div>
+    <div class="info-cell">
+      <div class="ic-label">Pay Period</div>
+      <div class="ic-value">March 15, 2026 — March 28, 2026</div>
+      <div class="ic-value" style="color:#64748b; font-size:9pt; font-weight:400; margin-top:2px;">Biweekly</div>
+    </div>
+    <div class="info-cell">
+      <div class="ic-label">Pay Date</div>
+      <div class="ic-value-mono">March 28, 2026</div>
+      <div class="ic-value" style="color:#64748b; font-size:9pt; font-weight:400; margin-top:2px;">Check / Direct Deposit</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT: EARNINGS + DEDUCTIONS -->
+  <div class="main-content">
+
+    <!-- EARNINGS -->
+    <div>
+      <div class="section-title">Earnings</div>
+      <table class="earnings-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Rate</th>
+            <th>Hours</th>
+            <th>Current</th>
+            <th>YTD</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Regular</td>
+            <td>$23.00/hr</td>
+            <td>72.0</td>
+            <td>$1,656.00</td>
+            <td>$9,936.00</td>
+          </tr>
+          <tr>
+            <td>Overtime</td>
+            <td>$34.50/hr</td>
+            <td>5.5</td>
+            <td>$189.75</td>
+            <td>$310.50</td>
+          </tr>
+          <tr>
+            <td>Shift Differential</td>
+            <td>$1.75/hr</td>
+            <td>—</td>
+            <td>$1.75</td>
+            <td>$12.25</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td colspan="3"><strong>Gross Pay</strong></td>
+            <td><strong>$1,847.50</strong></td>
+            <td><strong>$10,258.75</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- DEDUCTIONS -->
+    <div>
+      <div class="section-title">Deductions</div>
+      <table class="deductions-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Current</th>
+            <th>YTD</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Federal Income Tax</td>
+            <td>$185.00</td>
+            <td>$1,028.00</td>
+          </tr>
+          <tr>
+            <td>MA State Income Tax</td>
+            <td>$92.38</td>
+            <td>$512.94</td>
+          </tr>
+          <tr>
+            <td>Social Security (6.2%)</td>
+            <td>$114.55</td>
+            <td>$636.04</td>
+          </tr>
+          <tr>
+            <td>Medicare (1.45%)</td>
+            <td>$26.79</td>
+            <td>$148.75</td>
+          </tr>
+          <tr>
+            <td>Health Insurance (EE)</td>
+            <td>$48.50</td>
+            <td>$291.00</td>
+          </tr>
+          <tr>
+            <td>401(k) Contribution</td>
+            <td>$55.43</td>
+            <td>$307.76</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td><strong>Total Deductions</strong></td>
+            <td><strong>$522.65</strong></td>
+            <td><strong>$2,924.49</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- NET PAY BOX -->
+    <div class="net-pay-box">
+      <div>
+        <div class="net-label">Net Pay</div>
+        <div class="net-sub">After all deductions</div>
+      </div>
+      <div class="net-period-amounts">
+        <div class="period-block">
+          <div class="pb-label">This Period</div>
+          <div class="pb-value">$1,324.85</div>
+        </div>
+        <div class="period-block">
+          <div class="pb-label">YTD Net</div>
+          <div class="pb-value">$7,334.26</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YTD SUMMARY -->
+    <div class="ytd-row">
+      <div class="ytd-cell">
+        <div class="ytd-label">YTD Gross</div>
+        <div class="ytd-value">$10,258.75</div>
+      </div>
+      <div class="ytd-cell">
+        <div class="ytd-label">YTD Tax</div>
+        <div class="ytd-value">$2,924.49</div>
+      </div>
+      <div class="ytd-cell">
+        <div class="ytd-label">YTD Net</div>
+        <div class="ytd-value">$7,334.26</div>
+      </div>
+      <div class="ytd-cell">
+        <div class="ytd-label">Pay Stubs Issued</div>
+        <div class="ytd-value">6</div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- DETAILS FOOTER -->
+  <div class="details-footer">
+    <div>
+      <div class="df-label">Employer</div>
+      Synthetic Corp LLC<br>
+      89 Industrial Way, Suite 12<br>
+      Woburn, MA 01801<br>
+      EIN: XX-FAKE001 &nbsp;|&nbsp; MA Employer ID: FAKE-MA-00331
+    </div>
+    <div>
+      <div class="df-label">Employee</div>
+      Maria Gonzalez-Reyes &nbsp;|&nbsp; EMP-FAKE-0088<br>
+      SSN: XXX-XX-1234 (masked)<br>
+      Department: Operations<br>
+      FLSA Status: Non-Exempt
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
