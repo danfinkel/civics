@@ -371,7 +371,7 @@ def process_track_b(doc1, doc2, doc3, doc4, doc5):
 
 
 # Build the Gradio interface
-with gr.Blocks(css=CUSTOM_CSS, title="CivicLens") as demo:
+with gr.Blocks(title="CivicLens") as demo:
     # Header
     gr.HTML(f"""
     <div class="civiclens-header">
@@ -494,4 +494,5 @@ if __name__ == "__main__":
         server_port=7860,
         share=False,
         show_error=True,
+        css=CUSTOM_CSS,
     )

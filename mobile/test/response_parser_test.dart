@@ -49,7 +49,7 @@ void main() {
 "duplicate_category_flag": false,
 "duplicate_category_explanation": "",
 "family_summary": "Complete."
-'';
+''';
 
       final result = ResponseParser.parseTrackB(json);
       expect(result.isSuccess, true);

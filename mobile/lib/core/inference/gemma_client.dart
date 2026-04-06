@@ -1,13 +1,14 @@
-/// Gemma 4 on-device inference client using MediaPipe GenAI
+/// Gemma 4 on-device inference client
 ///
-/// This client handles loading and inference with the Gemma 4 E2B model
-/// for privacy-preserving document analysis. All inference runs locally
-/// on the device - documents never leave the phone.
+/// This is a scaffold implementation for Agent 2 to complete.
+/// The actual MediaPipe GenAI integration will be added here.
+///
+/// For now, this provides a mock implementation that returns
+/// sample responses for development and testing.
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:mediapipe_genai/mediapipe_genai.dart';
 
 /// Response from Gemma inference
 class GemmaResponse {
@@ -56,14 +57,13 @@ typedef DownloadStateCallback = void Function(ModelDownloadState state);
 
 /// Client for on-device Gemma 4 inference
 ///
-/// Uses MediaPipe GenAI to run Gemma 4 E2B (2B parameters) locally.
-/// E2B requires ~2.5GB storage and ~4GB RAM during inference.
+/// TODO: Agent 2 will implement actual MediaPipe GenAI integration
+/// For now, this returns mock responses for development
 class GemmaClient {
   static const String _modelName = 'gemma4-e2b';
   static const double _defaultTemperature = 0.0;
   static const int _defaultMaxTokens = 2048;
 
-  LlmInference? _inference;
   bool _isInitialized = false;
 
   /// Whether the client is ready for inference
@@ -71,11 +71,7 @@ class GemmaClient {
 
   /// Initialize the Gemma client with the on-device model
   ///
-  /// [modelPath] - Path to the downloaded Gemma 4 E2B model files
-  /// [onProgress] - Callback for download progress (0.0 to 1.0)
-  /// [onStateChange] - Callback for state changes
-  ///
-  /// Returns true if initialization succeeded
+  /// TODO: Agent 2 will implement actual MediaPipe initialization
   Future<bool> initialize({
     required String modelPath,
     DownloadProgressCallback? onProgress,
@@ -84,16 +80,8 @@ class GemmaClient {
     try {
       onStateChange?.call(ModelDownloadState.downloading);
 
-      // Configure LLM inference options
-      final options = LlmInferenceOptions(
-        modelPath: modelPath,
-        maxTokens: _defaultMaxTokens,
-        temperature: _defaultTemperature,
-        topK: 1,  // Deterministic output for structured extraction
-      );
-
-      // Initialize the inference engine
-      _inference = await LlmInference.createFromOptions(options);
+      // Simulate download delay
+      await Future.delayed(const Duration(seconds: 1));
 
       _isInitialized = true;
       onStateChange?.call(ModelDownloadState.ready);
@@ -109,35 +97,23 @@ class GemmaClient {
 
   /// Check if the model is available at the given path
   static Future<bool> isModelAvailable(String modelPath) async {
-    // Model availability check would verify the model files exist
-    // This is a simplified check - in production, verify checksums
-    try {
-      // Check for required model files
-      // Gemma models typically have .bin or .task files
-      return true;  // Placeholder - implement actual check
-    } catch (e) {
-      return false;
-    }
+    return true; // Placeholder
   }
 
   /// Get the expected model size for download UI
-  static const int modelSizeBytes = 2.5 * 1024 * 1024 * 1024;  // ~2.5 GB
+  static const int modelSizeBytes = 2684354560; // ~2.5 GB
 
   /// Run inference with text and optional images
   ///
-  /// [prompt] - The text prompt to send to the model
-  /// [images] - Optional list of JPEG images as bytes
-  /// [temperature] - Sampling temperature (0.0 = deterministic)
-  /// [maxTokens] - Maximum tokens to generate
-  ///
-  /// Returns a [GemmaResponse] with the model output
+  /// TODO: Agent 2 will implement actual MediaPipe inference
+  /// For now, returns mock responses
   Future<GemmaResponse> chat({
     required String prompt,
     List<Uint8List> images = const [],
     double temperature = _defaultTemperature,
     int maxTokens = _defaultMaxTokens,
   }) async {
-    if (!_isInitialized || _inference == null) {
+    if (!_isInitialized) {
       return GemmaResponse.error(
         'GemmaClient not initialized. Call initialize() first.',
       );
@@ -145,143 +121,94 @@ class GemmaClient {
 
     final stopwatch = Stopwatch()..start();
 
-    try {
-      // Build the input with images if provided
-      final String response;
+    // Simulate processing delay
+    await Future.delayed(const Duration(seconds: 2));
 
-      if (images.isEmpty) {
-        // Text-only inference
-        response = await _inference!.generateResponse(prompt);
-      } else {
-        // Multimodal inference with images
-        // MediaPipe GenAI handles image encoding internally
-        final imageInputs = images.map((bytes) {
-          // Convert bytes to MediaPipe image format
-          return bytes;
-        }).toList();
+    stopwatch.stop();
 
-        // Create multimodal prompt
-        // Format: prompt with image placeholders processed by MediaPipe
-        final multimodalPrompt = _buildMultimodalPrompt(prompt, images.length);
-
-        response = await _inference!.generateResponse(
-          multimodalPrompt,
-          // Image data is passed through the inference API
-        );
-      }
-
-      stopwatch.stop();
-
-      return GemmaResponse(
-        rawText: response,
-        elapsed: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return GemmaResponse.error(
-        'Inference failed: $e',
-        elapsed: stopwatch.elapsed,
-      );
-    }
+    // Return mock response based on prompt type
+    return GemmaResponse(
+      rawText: _generateMockResponse(prompt),
+      elapsed: stopwatch.elapsed,
+    );
   }
 
-  /// Build a multimodal prompt with image references
-  String _buildMultimodalPrompt(String basePrompt, int imageCount) {
-    // MediaPipe GenAI handles image bytes separately from text
-    // The prompt structure depends on the specific MediaPipe version
-    // This is a simplified version - adjust based on actual API
-
-    final buffer = StringBuffer();
-
-    // Add image markers
-    for (int i = 0; i < imageCount; i++) {
-      buffer.writeln('<image>');
+  /// Generate a mock response for development/testing
+  String _generateMockResponse(String prompt) {
+    // Detect track type from prompt
+    if (prompt.contains('SNAP')) {
+      return '''{
+  "notice_summary": {
+    "requested_categories": ["Income Proof", "Residency Proof"],
+    "deadline": "April 15, 2026",
+    "consequence": "Benefits may be discontinued if not submitted"
+  },
+  "proof_pack": [
+    {
+      "category": "Income Proof",
+      "matched_document": "Document 1: pay stub",
+      "assessment": "likely_satisfies",
+      "confidence": "high",
+      "evidence": "Shows employer, gross pay, and pay period dates",
+      "caveats": ""
+    },
+    {
+      "category": "Residency Proof",
+      "matched_document": "Document 2: lease agreement",
+      "assessment": "likely_satisfies",
+      "confidence": "high",
+      "evidence": "Shows tenant name and Boston address",
+      "caveats": ""
     }
-
-    buffer.writeln();
-    buffer.writeln(basePrompt);
-
-    return buffer.toString();
-  }
-
-  /// Run inference with explicit image bytes for newer MediaPipe versions
-  ///
-  /// This method handles the multimodal input format where images
-  /// are passed alongside the text prompt.
-  Future<GemmaResponse> chatWithImages({
-    required String prompt,
-    required List<Uint8List> images,
-    double temperature = _defaultTemperature,
-    int maxTokens = _defaultMaxTokens,
-  }) async {
-    if (!_isInitialized || _inference == null) {
-      return GemmaResponse.error(
-        'GemmaClient not initialized. Call initialize() first.',
-      );
+  ],
+  "action_summary": "You appear to have the documents needed for your SNAP recertification. Submit your pay stub and lease agreement by April 15, 2026 to avoid any interruption in benefits."
+}''';
+    } else {
+      // Track B mock
+      return '''{
+  "requirements": [
+    {
+      "requirement": "Proof of Age",
+      "status": "satisfied",
+      "matched_document": "Document 1: birth certificate",
+      "evidence": "Shows child's date of birth",
+      "notes": "",
+      "confidence": "high"
+    },
+    {
+      "requirement": "Residency Proof 1",
+      "status": "satisfied",
+      "matched_document": "Document 2: lease agreement",
+      "evidence": "Shows Boston address",
+      "notes": "",
+      "confidence": "high"
+    },
+    {
+      "requirement": "Residency Proof 2",
+      "status": "satisfied",
+      "matched_document": "Document 3: utility bill",
+      "evidence": "Shows Boston address and recent date",
+      "notes": "",
+      "confidence": "high"
+    },
+    {
+      "requirement": "Immunization Record",
+      "status": "satisfied",
+      "matched_document": "Document 4: immunization record",
+      "evidence": "Shows required vaccinations",
+      "notes": "",
+      "confidence": "high"
     }
-
-    final stopwatch = Stopwatch()..start();
-
-    try {
-      // For MediaPipe GenAI, we need to use the multimodal API
-      // The exact API depends on the package version
-
-      // Approach 1: If MediaPipe supports direct image bytes
-      // final response = await _inference!.generateResponseWithImages(
-      //   prompt: prompt,
-      //   images: images,
-      // );
-
-      // Approach 2: Encode images as base64 in prompt (fallback)
-      final response = await _generateWithBase64Images(prompt, images);
-
-      stopwatch.stop();
-
-      return GemmaResponse(
-        rawText: response,
-        elapsed: stopwatch.elapsed,
-      );
-    } catch (e) {
-      stopwatch.stop();
-      return GemmaResponse.error(
-        'Multimodal inference failed: $e',
-        elapsed: stopwatch.elapsed,
-      );
+  ],
+  "duplicate_category_flag": false,
+  "duplicate_category_explanation": "",
+  "family_summary": "Your registration packet looks complete! Bring these documents to the BPS Welcome Center: birth certificate, lease agreement, utility bill, and immunization record."
+}''';
     }
-  }
-
-  /// Fallback method that encodes images as base64 in the prompt
-  Future<String> _generateWithBase64Images(
-    String prompt,
-    List<Uint8List> images,
-  ) async {
-    // Note: This is a fallback if native multimodal API isn't available
-    // Gemma 4 E2B supports image understanding through the prompt
-
-    final buffer = StringBuffer();
-
-    // Add base64-encoded images with markers
-    for (int i = 0; i < images.length; i++) {
-      final base64Image = _bytesToBase64(images[i]);
-      buffer.writeln('<image_$i>');
-      buffer.writeln('data:image/jpeg;base64,$base64Image');
-      buffer.writeln('</image_$i>');
-    }
-
-    buffer.writeln();
-    buffer.writeln(prompt);
-
-    return _inference!.generateResponse(buffer.toString());
-  }
-
-  String _bytesToBase64(Uint8List bytes) {
-    return base64Encode(bytes);
   }
 
   /// Dispose of resources
   void dispose() {
-    _inference?.close();
-    _inference = null;
     _isInitialized = false;
   }
 }
@@ -297,8 +224,7 @@ class CloudFallbackClient {
 
   /// Check if cloud mode is available
   static Future<bool> isAvailable() async {
-    // Check network connectivity and API health
-    return true;  // Placeholder
+    return true; // Placeholder
   }
 
   /// Run inference via cloud API with user consent
@@ -309,8 +235,6 @@ class CloudFallbackClient {
     required String prompt,
     List<Uint8List> images = const [],
   }) async {
-    // Cloud API implementation
-    // This would POST to the Hugging Face Spaces demo or similar
     return GemmaResponse.error('Cloud fallback not yet implemented');
   }
 }

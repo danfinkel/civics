@@ -83,17 +83,17 @@ class TrackAController {
       images: images,
     );
 
-    if (!response.success) {
-      throw Exception(response.error ?? 'Inference failed');
+    if (!response.isSuccess) {
+      throw Exception(response.errorMessage ?? 'Inference failed');
     }
 
     // Parse response
     final result = ResponseParser.parseTrackA(response.rawText);
-    if (result == null) {
-      throw Exception('Could not parse response');
+    if (!result.isSuccess || result.data == null) {
+      throw Exception(result.errorMessage ?? 'Could not parse response');
     }
 
-    return result;
+    return result.data!;
   }
 
   void dispose() {

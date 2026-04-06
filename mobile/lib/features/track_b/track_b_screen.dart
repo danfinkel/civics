@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/imaging/document_capture.dart';
 import '../../core/models/track_b_result.dart';
 import '../../shared/theme/app_theme.dart';
-import 'track_b_controller.dart';
+import 'track_b_controller.dart' hide DocumentSlot;
 import 'widgets/document_slot.dart';
 import 'widgets/requirement_row.dart';
 import 'widgets/confidence_badge.dart';

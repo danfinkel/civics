@@ -17,11 +17,11 @@ dependencies:
   google_fonts: ^6.1.0
   cupertino_icons: ^1.0.6
 
-  # MediaPipe for on-device inference
-  mediapipe_genai: ^0.1.0
+  # MediaPipe for on-device inference (Agent 2 will configure)
+  # mediapipe_genai: ^0.1.0  # TODO: Add when package is available
 
-  # For blur detection
-  google_mlkit_commons: ^0.7.1
+  # For blur detection (not needed - using image package instead)
+  # google_mlkit_commons: ^0.7.1
 
 dev_dependencies:
   flutter_test:

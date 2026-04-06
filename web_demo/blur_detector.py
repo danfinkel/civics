@@ -22,6 +22,28 @@ class BlurResult:
     guidance: str
 
 
+def _convolve2d(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    """Simple 2D convolution without scipy dependency."""
+    from numpy.lib.stride_tricks import sliding_window_view
+
+    kh, kw = kernel.shape
+    ih, iw = image.shape
+
+    # Pad the image
+    padded = np.pad(image, ((kh//2, kh//2), (kw//2, kw//2)), mode='constant')
+
+    # Create sliding windows
+    windows = sliding_window_view(padded, (kh, kw))
+
+    # Reshape for broadcasting with kernel
+    output = np.zeros((ih, iw), dtype=np.float32)
+    for i in range(ih):
+        for j in range(iw):
+            output[i, j] = np.sum(windows[i, j] * kernel)
+
+    return output
+
+
 def compute_blur_score(image_bytes: bytes) -> float:
     """
     Compute blur score using Laplacian variance method.
@@ -42,14 +64,28 @@ def compute_blur_score(image_bytes: bytes) -> float:
         img = Image.open(io.BytesIO(image_bytes)).convert('L')  # Grayscale
         img_array = np.array(img, dtype=np.float32)
 
+        # Downsample large images for performance
+        max_dim = max(img_array.shape)
+        if max_dim > 512:
+            scale = 512 / max_dim
+            new_h = int(img_array.shape[0] * scale)
+            new_w = int(img_array.shape[1] * scale)
+            from PIL import Image as PILImage
+            img_small = img.resize((new_w, new_h), PILImage.Resampling.LANCZOS)
+            img_array = np.array(img_small, dtype=np.float32)
+
         # Laplacian kernel
         kernel = np.array([[0, 1, 0],
                           [1, -4, 1],
                           [0, 1, 0]], dtype=np.float32)
 
-        # Apply convolution
-        from scipy import ndimage
-        laplacian = ndimage.convolve(img_array, kernel, mode='constant', cval=0.0)
+        # Apply convolution using scipy if available, else fallback
+        try:
+            from scipy import ndimage
+            laplacian = ndimage.convolve(img_array, kernel, mode='constant', cval=0.0)
+        except ImportError:
+            # Fallback: simple convolution
+            laplacian = _convolve2d(img_array, kernel)
 
         # Compute variance
         variance = np.var(laplacian)
