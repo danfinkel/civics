@@ -17,8 +17,17 @@ class TrackBScreen extends StatefulWidget {
 
 class _TrackBScreenState extends State<TrackBScreen> {
   final TrackBController _controller = TrackBController();
-  bool _isAnalyzing = false;
-  TrackBResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize service on startup
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    await _controller.initializeService();
+  }
 
   @override
   void dispose() {
@@ -87,30 +96,41 @@ class _TrackBScreenState extends State<TrackBScreen> {
   }
 
   Future<void> _analyzeDocuments() async {
-    setState(() => _isAnalyzing = true);
+    await _controller.analyzeDocuments();
+    setState(() {}); // Refresh UI based on controller state
 
-    try {
-      final result = await _controller.analyzeDocuments();
-      if (mounted) {
-        setState(() {
-          _result = result;
-          _isAnalyzing = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isAnalyzing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Analysis failed: $e')),
-        );
-      }
+    // Show error dialog if failed
+    if (_controller.state == TrackBViewState.error && mounted) {
+      _showErrorDialog(_controller.errorMessage ?? 'Analysis failed');
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Analysis Failed'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Dismiss'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _controller.retryAnalysis();
+            },
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _startOver() {
     setState(() {
       _controller.clearAll();
-      _result = null;
     });
   }
 
@@ -125,7 +145,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
         ),
         title: const Text('School Enrollment Packet'),
         actions: [
-          if (_result != null)
+          if (_controller.state == TrackBViewState.success)
             IconButton(
               icon: const Icon(Icons.share),
               onPressed: () {
@@ -134,8 +154,20 @@ class _TrackBScreenState extends State<TrackBScreen> {
             ),
         ],
       ),
-      body: _result != null ? _buildResultsView() : _buildUploadView(),
+      body: _buildBody(),
     );
+  }
+
+  Widget _buildBody() {
+    switch (_controller.state) {
+      case TrackBViewState.idle:
+      case TrackBViewState.error:
+        return _buildUploadView();
+      case TrackBViewState.loading:
+        return _buildLoadingView();
+      case TrackBViewState.success:
+        return _buildResultsView();
+    }
   }
 
   Widget _buildUploadView() {
@@ -195,34 +227,55 @@ class _TrackBScreenState extends State<TrackBScreen> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: _controller.canAnalyze && !_isAnalyzing
+            onPressed: _controller.canAnalyze
                 ? _analyzeDocuments
                 : null,
-            child: _isAnalyzing
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Text('Analyzing...'),
-                    ],
-                  )
-                : const Text('Check My Packet'),
+            child: const Text('Check My Packet'),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildLoadingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            strokeWidth: 4,
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Analyzing your documents...',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This may take 30-60 seconds',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.neutral,
+            ),
+          ),
+          const SizedBox(height: 32),
+          // Timeout option
+          TextButton(
+            onPressed: () {
+              _controller.switchToCloudAndRetry();
+            },
+            child: const Text('Taking too long? Switch to Cloud Mode'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildResultsView() {
-    final result = _result!;
+    final result = _controller.result!;
 
     return Column(
       children: [

@@ -39,6 +39,40 @@ CUSTOM_CSS = f"""
     --surface: {COLORS['surface']};
 }}
 
+/* Mobile viewport optimization */
+@media (max-width: 768px) {{
+    .civiclens-header h1 {{
+        font-size: 22px !important;
+    }}
+    .civiclens-header p {{
+        font-size: 12px !important;
+    }}
+    .requirement-row {{
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }}
+    .requirement-row > div:last-child {{
+        margin-top: 12px;
+        text-align: left !important;
+    }}
+}}
+
+/* Ensure touch targets are at least 48px */
+.gr-button {{
+    min-height: 48px !important;
+    min-width: 48px !important;
+}}
+
+.gr-file-upload {{
+    min-height: 48px !important;
+}}
+
+/* Improve text readability on mobile */
+body {{
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+}}
+
 .civiclens-header {{
     text-align: center;
     padding: 24px 0;
@@ -372,6 +406,11 @@ def process_track_b(doc1, doc2, doc3, doc4, doc5):
 
 # Build the Gradio interface
 with gr.Blocks(title="CivicLens") as demo:
+    # Viewport meta tag for mobile
+    gr.HTML("""
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    """)
+
     # Header
     gr.HTML(f"""
     <div class="civiclens-header">

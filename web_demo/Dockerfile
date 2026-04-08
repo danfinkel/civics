@@ -7,10 +7,11 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt .
+COPY requirements_hf.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
@@ -19,5 +20,5 @@ COPY *.py .
 # Expose port
 EXPOSE 7860
 
-# Run the app
-CMD ["python", "app.py"]
+# Run the API server (includes Gradio at root)
+CMD ["python", "api.py"]

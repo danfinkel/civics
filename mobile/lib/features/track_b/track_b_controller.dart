@@ -1,9 +1,15 @@
 import 'dart:typed_data';
 import '../../core/imaging/document_capture.dart';
-import '../../core/inference/gemma_client.dart';
-import '../../core/inference/prompt_templates.dart';
-import '../../core/inference/response_parser.dart';
+import '../../core/inference/inference.dart';
 import '../../core/models/track_b_result.dart';
+
+/// View state for Track B screen
+enum TrackBViewState {
+  idle,
+  loading,
+  success,
+  error,
+}
 
 /// Document slot for Track B upload
 class DocumentSlot {
@@ -24,7 +30,23 @@ class DocumentSlot {
 
 /// Controller for Track B (School Enrollment) flow
 class TrackBController {
-  final GemmaClient _gemmaClient = GemmaClient();
+  final InferenceService _service = InferenceService();
+
+  // View state
+  TrackBViewState _state = TrackBViewState.idle;
+  TrackBViewState get state => _state;
+
+  // Error message if state is error
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  // Result if state is success
+  TrackBResult? _result;
+  TrackBResult? get result => _result;
+
+  // Inference mode used
+  InferenceMode? _modeUsed;
+  InferenceMode? get modeUsed => _modeUsed;
 
   // Document slots for BPS registration
   final List<DocumentSlot> slots = [
@@ -82,45 +104,77 @@ class TrackBController {
     for (final slot in slots) {
       slot.document = null;
     }
+    _result = null;
+    _errorMessage = null;
+    _state = TrackBViewState.idle;
   }
 
-  /// Analyze documents using Gemma 4
-  Future<TrackBResult> analyzeDocuments() async {
-    // Build document labels for prompt
-    final documentLabels = <String>[];
-    final images = <Uint8List>[];
+  /// Initialize the inference service
+  Future<bool> initializeService() async {
+    final success = await _service.initialize(preferCloud: true);
+    _modeUsed = _service.mode;
+    return success;
+  }
 
-    for (int i = 0; i < slots.length; i++) {
-      final slot = slots[i];
-      if (slot.isFilled) {
-        documentLabels.add('${slot.title}: ${slot.description}');
-        images.add(slot.document!.imageBytes);
+  /// Analyze documents using InferenceService
+  Future<void> analyzeDocuments() async {
+    _state = TrackBViewState.loading;
+    _errorMessage = null;
+
+    // Initialize service if not ready
+    if (!_service.isReady) {
+      final initialized = await initializeService();
+      if (!initialized) {
+        _state = TrackBViewState.error;
+        _errorMessage = _service.lastError ?? 'Failed to initialize inference service';
+        return;
       }
     }
 
-    // Generate prompt
-    final prompt = PromptTemplates.trackB(documentLabels: documentLabels);
+    // Collect images and descriptions
+    final images = <Uint8List>[];
+    final descriptions = <String>[];
+
+    for (final slot in slots) {
+      if (slot.isFilled) {
+        images.add(slot.document!.imageBytes);
+        descriptions.add('${slot.title}: ${slot.description}');
+      }
+    }
+
+    if (images.isEmpty) {
+      _state = TrackBViewState.error;
+      _errorMessage = 'Add at least one document to get started';
+      return;
+    }
 
     // Run inference
-    final response = await _gemmaClient.chat(
-      prompt: prompt,
-      images: images,
+    final inferenceResult = await _service.analyzeTrackB(
+      documents: images,
+      documentDescriptions: descriptions,
     );
 
-    if (!response.isSuccess) {
-      throw Exception(response.errorMessage ?? 'Inference failed');
+    if (inferenceResult.isSuccess && inferenceResult.data != null) {
+      _result = inferenceResult.data;
+      _state = TrackBViewState.success;
+    } else {
+      _state = TrackBViewState.error;
+      _errorMessage = inferenceResult.errorMessage ?? 'Analysis failed';
     }
+  }
 
-    // Parse response
-    final result = ResponseParser.parseTrackB(response.rawText);
-    if (!result.isSuccess || result.data == null) {
-      throw Exception(result.errorMessage ?? 'Could not parse response');
-    }
+  /// Retry analysis (e.g., after error)
+  Future<void> retryAnalysis() async {
+    await analyzeDocuments();
+  }
 
-    return result.data!;
+  /// Switch to cloud mode and retry
+  Future<void> switchToCloudAndRetry() async {
+    _service.mode = InferenceMode.cloud;
+    await analyzeDocuments();
   }
 
   void dispose() {
-    _gemmaClient.dispose();
+    _service.dispose();
   }
 }

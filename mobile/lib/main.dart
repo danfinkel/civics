@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'features/onboarding/model_download_screen.dart';
 import 'features/track_a/track_a_screen.dart';
 import 'features/track_b/track_b_screen.dart';
 import 'shared/theme/app_theme.dart';
@@ -18,7 +19,36 @@ class CivicLensApp extends StatelessWidget {
       title: 'CivicLens',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      home: const AppEntryPoint(),
+    );
+  }
+}
+
+/// Entry point that checks for model download before showing main app
+class AppEntryPoint extends StatelessWidget {
+  const AppEntryPoint({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: ModelDownloadScreen.isModelDownloaded(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final isDownloaded = snapshot.data ?? false;
+
+        if (isDownloaded) {
+          return const HomeScreen();
+        } else {
+          return const ModelDownloadScreen();
+        }
+      },
     );
   }
 }

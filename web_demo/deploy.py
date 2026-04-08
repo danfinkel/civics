@@ -6,22 +6,38 @@ Requires HF_TOKEN environment variable to be set.
 """
 
 import os
-import sys
 from pathlib import Path
 
 from huggingface_hub import HfApi, create_repo, upload_folder
 
 
+def load_local_env(env_path: Path) -> None:
+    """Load KEY=VALUE pairs from a local .env file into os.environ."""
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def deploy():
     """Deploy the web demo to Hugging Face Spaces."""
+    load_local_env(Path(__file__).parent / ".env")
     token = os.environ.get("HF_TOKEN")
     if not token:
-        print("Error: HF_TOKEN environment variable not set")
-        print("Get your token from https://huggingface.co/settings/tokens")
-        sys.exit(1)
+        raise RuntimeError(
+            "Missing HF_TOKEN. Set it in web_demo/.env or your environment."
+        )
 
     # Space configuration
-    repo_id = "danfinkel/civiclens-demo"  # Change this to your username/space-name
+    repo_id = "DanFinkel/civiclens"  # Change this to your username/space-name
     space_sdk = "docker"
 
     api = HfApi(token=token)

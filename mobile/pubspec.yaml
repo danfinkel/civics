@@ -16,9 +16,19 @@ dependencies:
   path: ^1.9.0
   google_fonts: ^6.1.0
   cupertino_icons: ^1.0.6
+  shared_preferences: ^2.2.2
 
-  # MediaPipe for on-device inference (Agent 2 will configure)
-  # mediapipe_genai: ^0.1.0  # TODO: Add when package is available
+  # HTTP client for cloud fallback and model download
+  http: ^1.2.0
+
+  # Crypto for checksum verification
+  crypto: ^3.0.3
+
+  # llama.cpp for on-device inference (replaces deprecated MediaPipe)
+  llama_cpp_dart: ^0.0.5
+
+  # Google ML Kit for on-device OCR
+  google_mlkit_text_recognition: ^0.13.0
 
   # For blur detection (not needed - using image package instead)
   # google_mlkit_commons: ^0.7.1

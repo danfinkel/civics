@@ -300,6 +300,34 @@ This document contains the design specifications for the CivicLens mobile applic
 
 ---
 
+## Alternative Design Variants
+
+### Prism Style Screens (Updated Designs)
+
+Newer variants of key screens have been created with refined visual styling while maintaining the same design system tokens:
+
+| Screen | Original ID | Prism Style ID | Changes |
+|--------|-------------|----------------|---------|
+| Home Screen | `c45e3e74b70d464eb8df745348359aa3` | `6826a9a6e6e04cc092eadd1e37be9cbd` | Refined card styling |
+| School Enrollment Upload | `64df89dce8b443a293f2c7a17d2226bb` | `33383f8ec86f49f99d2d7930e64d8839` | Updated layout |
+| Packet Status Results | `8333b3e1e52f49dbb2b2eb19dc6490b7` | `8c33ee3965c4439cb666f3b538b2562d` | Enhanced visual hierarchy |
+
+**Recommendation:** Agents may use either version. The Prism Style variants offer refined aesthetics while maintaining identical functionality and design tokens.
+
+### Reliability Transparency Screen
+
+**Screen ID:** `5533357ba8a94d01b3ecaf19fc78ad6f`
+
+**Purpose:** Display model confidence and limitations to users
+
+**Features:**
+- Transparency about AI model capabilities
+- Confidence score visualization
+- Plain language explanation of limitations
+- Trust-building through honesty
+
+---
+
 ## Responsive Considerations
 
 **Mobile-First Design:**
@@ -341,10 +369,16 @@ This document contains the design specifications for the CivicLens mobile applic
 
 **Stitch Project:** https://stitch.google.com/projects/7798513403930064434
 
-**Screens:**
+**Screens (Original):**
 1. Home Screen: `c45e3e74b70d464eb8df745348359aa3`
 2. Document Upload: `64df89dce8b443a293f2c7a17d2226bb`
 3. Results Screen: `8333b3e1e52f49dbb2b2eb19dc6490b7`
+
+**Screens (Prism Style Variants):**
+1. Home Screen (Prism): `6826a9a6e6e04cc092eadd1e37be9cbd`
+2. School Enrollment (Prism): `33383f8ec86f49f99d2d7930e64d8839`
+3. Packet Status (Prism): `8c33ee3965c4439cb666f3b538b2562d`
+4. Reliability Transparency: `5533357ba8a94d01b3ecaf19fc78ad6f`
 
 **HTML/CSS Export:**
 Each screen has downloadable HTML code available via the Stitch project.
@@ -454,6 +488,14 @@ Any changes to these specifications should be:
 - [x] Confidence indicator component defined
 - [x] Design specs delivered to Agent 1 (mobile)
 - [x] Design specs delivered to Agent 3 (web)
+- [x] Prism Style variants created
+- [x] Reliability Transparency screen added
+
+---
+
+**Update History:**
+- April 5, 2026: Initial design system and 4 core screens
+- April 7, 2026: Added Prism Style variants and Reliability Transparency screen
 
 ---
 
