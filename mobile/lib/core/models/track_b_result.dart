@@ -70,6 +70,10 @@ class TrackBResult {
     required this.familySummary,
   });
 
+  /// Count of requirements with satisfied status
+  int get satisfiedCount =>
+      requirements.where((r) => r.status == RequirementStatus.satisfied).length;
+
   ConfidenceLevel get overallConfidence {
     if (requirements.isEmpty) return ConfidenceLevel.uncertain;
 
@@ -94,5 +98,38 @@ class TrackBResult {
           json['duplicate_category_explanation'] ?? '',
       familySummary: json['family_summary'] ?? '',
     );
+  }
+
+  /// Plain text for share sheet / clipboard (design spec: Save Summary / share).
+  String toShareableText() {
+    final b = StringBuffer()
+      ..writeln('CivicLens — Boston Public Schools registration')
+      ..writeln();
+
+    for (final r in requirements) {
+      final status = switch (r.status) {
+        RequirementStatus.satisfied => 'Satisfied',
+        RequirementStatus.questionable => 'Questionable',
+        RequirementStatus.missing => 'Missing',
+      };
+      b.writeln('• ${r.requirement}: $status');
+      b.writeln('  Matched: ${r.matchedDocument}');
+      if (r.evidence.isNotEmpty) {
+        b.writeln('  Evidence: ${r.evidence}');
+      }
+      b.writeln();
+    }
+
+    if (duplicateCategoryFlag) {
+      b.writeln('Note: ${duplicateCategoryExplanation.isNotEmpty ? duplicateCategoryExplanation : 'Possible duplicate document categories.'}');
+      b.writeln();
+    }
+
+    b
+      ..writeln('What to bring')
+      ..writeln('─────────────')
+      ..writeln(familySummary);
+
+    return b.toString().trim();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/inference/gemma_client.dart';
+import '../../shared/navigation/prism_page_routes.dart';
 import '../../shared/theme/app_theme.dart';
 import '../track_b/track_b_screen.dart';
 
@@ -10,6 +11,8 @@ enum DownloadState {
   ready,
   error,
 }
+
+const String _prefsKey = 'model_download_complete';
 
 class ModelDownloadScreen extends StatefulWidget {
   final VoidCallback? onContinue;
@@ -23,14 +26,6 @@ class ModelDownloadScreen extends StatefulWidget {
 
   @override
   State<ModelDownloadScreen> createState() => _ModelDownloadScreenState();
-}
-
-class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
-  DownloadState _state = DownloadState.notStarted;
-  double _progress = 0.0;
-  String? _errorMessage;
-
-  static const String _prefsKey = 'model_download_complete';
 
   /// Check if model has been downloaded
   static Future<bool> isModelDownloaded() async {
@@ -43,6 +38,12 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefsKey, true);
   }
+}
+
+class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
+  DownloadState _state = DownloadState.notStarted;
+  double _progress = 0.0;
+  String? _errorMessage;
 
   Future<void> _startDownload() async {
     setState(() {
@@ -61,7 +62,7 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
         switch (state) {
           case ModelDownloadState.ready:
             setState(() => _state = DownloadState.ready);
-            markDownloaded();
+            ModelDownloadScreen.markDownloaded();
             break;
           case ModelDownloadState.error:
             setState(() {
@@ -82,7 +83,10 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const TrackBScreen()),
+        PrismPageRoutes.fadeReplace<void>(
+          const TrackBScreen(),
+          name: 'TrackB',
+        ),
       );
     }
   }

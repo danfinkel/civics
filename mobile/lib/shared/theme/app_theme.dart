@@ -28,6 +28,9 @@ class AppColors {
   // Outline
   static const Color outline = Color(0xFF73777F);
   static const Color ghostBorder = Color(0xFFC3C6CF);
+
+  /// Disabled primary button (design spec)
+  static const Color disabledFill = Color(0xFFE0E3E5);
 }
 
 class AppTheme {
@@ -55,6 +58,7 @@ class AppTheme {
         headlineMedium: GoogleFonts.inter(
           fontSize: 20,
           fontWeight: FontWeight.w600,
+          height: 1.4,
           letterSpacing: -0.02,
           color: AppColors.primary,
         ),
@@ -81,10 +85,12 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
+          disabledBackgroundColor: AppColors.disabledFill,
+          disabledForegroundColor: AppColors.neutral,
           minimumSize: const Size(double.infinity, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
@@ -99,7 +105,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           side: const BorderSide(color: AppColors.outline),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
@@ -110,11 +116,9 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.surfaceContainerLowest,
         elevation: 0,
+        shadowColor: AppColors.primary.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(
-            color: AppColors.ghostBorder.withOpacity(0.2),
-          ),
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
       appBarTheme: AppBarTheme(

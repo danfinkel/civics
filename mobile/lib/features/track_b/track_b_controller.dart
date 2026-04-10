@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import '../../core/imaging/document_capture.dart';
 import '../../core/inference/inference.dart';
-import '../../core/models/track_b_result.dart';
 
 /// View state for Track B screen
 enum TrackBViewState {
@@ -9,6 +8,17 @@ enum TrackBViewState {
   loading,
   success,
   error,
+}
+
+/// Progress info for loading state
+class AnalysisProgress {
+  final String message;
+  final double percent;
+
+  const AnalysisProgress({
+    required this.message,
+    required this.percent,
+  });
 }
 
 /// Document slot for Track B upload
@@ -44,9 +54,37 @@ class TrackBController {
   TrackBResult? _result;
   TrackBResult? get result => _result;
 
+  /// Set when [analyzeDocuments] completes successfully (cleared on new run / [clearAll]).
+  DateTime? _analysisCompletedAt;
+  DateTime? get analysisCompletedAt => _analysisCompletedAt;
+
   // Inference mode used
   InferenceMode? _modeUsed;
   InferenceMode? get modeUsed => _modeUsed;
+
+  // Progress for loading state
+  AnalysisProgress _progress = const AnalysisProgress(
+    message: 'Initializing...',
+    percent: 0.0,
+  );
+  AnalysisProgress get progress => _progress;
+
+  // Callback for progress updates
+  void Function(AnalysisProgress)? onProgress;
+
+  /// When false, Grade Indicator slot is hidden and excluded from analysis.
+  bool includeGradeIndicator = false;
+
+  void setIncludeGradeIndicator(bool value) {
+    includeGradeIndicator = value;
+    if (!value) {
+      clearDocument(4);
+    }
+  }
+
+  /// Slot indices shown in the upload UI (0–4; index 4 is grade).
+  List<int> get visibleSlotIndices =>
+      includeGradeIndicator ? [0, 1, 2, 3, 4] : [0, 1, 2, 3];
 
   // Document slots for BPS registration
   final List<DocumentSlot> slots = [
@@ -104,8 +142,10 @@ class TrackBController {
     for (final slot in slots) {
       slot.document = null;
     }
+    includeGradeIndicator = false;
     _result = null;
     _errorMessage = null;
+    _analysisCompletedAt = null;
     _state = TrackBViewState.idle;
   }
 
@@ -116,10 +156,18 @@ class TrackBController {
     return success;
   }
 
-  /// Analyze documents using InferenceService
+  /// Update progress and notify listeners
+  void _updateProgress(String message, double percent) {
+    _progress = AnalysisProgress(message: message, percent: percent);
+    onProgress?.call(_progress);
+  }
+
+  /// Analyze documents using InferenceService with progress tracking
   Future<void> analyzeDocuments() async {
     _state = TrackBViewState.loading;
     _errorMessage = null;
+    _analysisCompletedAt = null;
+    _updateProgress('Initializing...', 0.0);
 
     // Initialize service if not ready
     if (!_service.isReady) {
@@ -135,7 +183,9 @@ class TrackBController {
     final images = <Uint8List>[];
     final descriptions = <String>[];
 
-    for (final slot in slots) {
+    for (var i = 0; i < slots.length; i++) {
+      if (i == 4 && !includeGradeIndicator) continue;
+      final slot = slots[i];
       if (slot.isFilled) {
         images.add(slot.document!.imageBytes);
         descriptions.add('${slot.title}: ${slot.description}');
@@ -148,14 +198,31 @@ class TrackBController {
       return;
     }
 
-    // Run inference
-    final inferenceResult = await _service.analyzeTrackB(
+    // Run inference with progress tracking
+    // OCR phase: 0-30%, LLM phase: 30-100%
+    final inferenceResult = await _service.analyzeTrackBWithOcr(
       documents: images,
       documentDescriptions: descriptions,
+      onOcrProgress: (docIndex, totalDocs) {
+        final percent = (docIndex / totalDocs) * 30;
+        _updateProgress(
+          'Reading document ${docIndex + 1} of $totalDocs...',
+          percent,
+        );
+      },
+      onLlmProgress: (progress, {phase}) {
+        // progress is 0.0-1.0, map to 30-100%
+        final percent = 30 + (progress * 70);
+        final message = (phase != null && phase.isNotEmpty)
+            ? phase
+            : (progress < 0.5 ? 'Analyzing documents...' : 'Almost done...');
+        _updateProgress(message, percent);
+      },
     );
 
     if (inferenceResult.isSuccess && inferenceResult.data != null) {
       _result = inferenceResult.data;
+      _analysisCompletedAt = DateTime.now();
       _state = TrackBViewState.success;
     } else {
       _state = TrackBViewState.error;

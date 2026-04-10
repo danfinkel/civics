@@ -93,14 +93,11 @@ class ModelManager {
   DownloadState _state = DownloadState.notStarted;
   DownloadState get state => _state;
 
-  /// Get the model directory path
+  /// Get the model directory path (Documents/ to match Agent 2's test setup)
   Future<Directory> get _modelDirectory async {
     final appDir = await getApplicationDocumentsDirectory();
-    final modelDir = Directory('${appDir.path}/models');
-    if (!await modelDir.exists()) {
-      await modelDir.create(recursive: true);
-    }
-    return modelDir;
+    // Use Documents/ directly (not Documents/models/) to match Agent 2's working setup
+    return appDir;
   }
 
   /// Get the full model file path

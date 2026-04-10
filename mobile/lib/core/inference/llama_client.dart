@@ -1,216 +1,348 @@
 /// llama.cpp-based on-device inference client for CivicLens
 ///
-/// Replaces MediaPipe (deprecated) with llama.cpp for Gemma 4 E2B inference.
 /// Uses llama_cpp_dart package for Flutter bindings.
-///
-/// Model format: GGUF (converted from E2B)
-/// Target: iOS 13+, Android API 24+
-///
-/// Setup required:
-/// 1. Build llama.cpp for iOS/Android (see docs/build_llama.md)
-/// 2. Convert Gemma 4 E2B to GGUF format
-/// 3. Include libllama.dylib / libllama.so in build
+/// Runs model loading in a background isolate to avoid iOS watchdog kills.
+/// Model format: GGUF
 
-import 'dart:ffi';
+import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:llama_cpp_dart/llama_cpp_dart.dart';
 import 'gemma_client.dart';
 
+export 'gemma_client.dart' show GemmaResponse;
+
+/// Isolate entry point: loads model and runs inference commands via ports
+void _llamaIsolateEntry(List<dynamic> args) {
+  final SendPort mainPort = args[0];
+  final String modelPath = args[1];
+  final String? libraryPath = args[2];
+
+  final recvPort = ReceivePort();
+  Llama? llama;
+
+  try {
+    Llama.libraryPath = libraryPath;
+
+    final mp = ModelParams();
+    // iOS: offload all layers to Metal — this is what gave ~12s LLM / ~15s B1 end-to-end.
+    // CPU-only (nGpuLayers=0) was a speculative workaround for load issues; it makes
+    // large-prompt prefill take minutes. Android: CPU until we validate a GPU backend.
+    mp.nGpuLayers = Platform.isIOS ? 99 : 0;
+    mp.useMemorymap = true;
+    mp.useMemoryLock = false;
+
+    final cp = ContextParams();
+    cp.nCtx = 4096;
+    cp.nBatch = 2048;
+
+    final sp = SamplerParams();
+    sp.greedy = true;
+
+    llama = Llama(
+      modelPath,
+      modelParams: mp,
+      contextParams: cp,
+      samplerParams: sp,
+      verbose: true,
+    );
+
+    mainPort.send({'status': 'ready', 'port': recvPort.sendPort});
+  } catch (e) {
+    mainPort.send({'status': 'error', 'error': e.toString()});
+    return;
+  }
+
+  recvPort.listen((message) {
+    if (message is Map) {
+      final cmd = message['cmd'] as String;
+      final replyPort = message['replyPort'] as SendPort;
+
+      if (cmd == 'chat') {
+        try {
+          final prompt = message['prompt'] as String;
+          final maxTokens = message['maxTokens'] as int;
+
+          replyPort.send({
+            'progress': 0.0,
+            'phase':
+                'Starting inference…',
+          });
+
+          // Rough token estimate (~4 chars/token for English; conservative for JSON/OCR)
+          final estPromptTokens = (prompt.length / 4).ceil().clamp(1, 100000);
+          llama!.setPrompt(prompt);
+
+          replyPort.send({
+            'progress': 0.0,
+            'phase':
+                'Prefill: running one big CPU pass over ~$estPromptTokens prompt tokens '
+                '(often 3–12 min on iPhone CPU). Percent stays at 0% until the first output token.',
+          });
+
+          final buffer = StringBuffer();
+          int count = 0;
+          bool done = false;
+          var lastProgressBucket = -1;
+          var reportedGenerating = false;
+
+          while (!done) {
+            final (text, isDone) = llama!.getNext();
+            if (text.isNotEmpty) {
+              buffer.write(text);
+            }
+            if (isDone) {
+              done = true;
+            } else {
+              count++;
+              if (count >= maxTokens) done = true;
+            }
+            if (!reportedGenerating && count > 0) {
+              reportedGenerating = true;
+              replyPort.send({
+                'progress': (count / maxTokens).clamp(0.0, 1.0),
+                'phase': 'Generating output tokens…',
+              });
+            }
+            // Throttle to ~1% steps during output (more updates than before)
+            if (maxTokens > 0) {
+              final pct = (count / maxTokens).clamp(0.0, 1.0);
+              final bucket = (pct * 100).floor();
+              if (bucket != lastProgressBucket) {
+                lastProgressBucket = bucket;
+                replyPort.send({
+                  'progress': pct,
+                  if (reportedGenerating) 'phase': 'Generating output tokens…',
+                });
+              }
+            }
+          }
+
+          replyPort.send({'result': buffer.toString()});
+        } catch (e) {
+          replyPort.send({'error': 'Inference failed: $e'});
+        }
+      } else if (cmd == 'dispose') {
+        llama?.dispose();
+        llama = null;
+        recvPort.close();
+        replyPort.send({'done': true});
+      }
+    }
+  });
+}
+
 /// Client for on-device inference using llama.cpp
 ///
-/// This is the primary on-device inference path for CivicLens.
-/// Cloud fallback is secondary (for older devices or if this fails).
+/// Uses a static isolate so only one model is loaded app-wide.
+/// This prevents memory leaks when navigating between screens.
 class LlamaClient {
-  Llama? _llama;
-  bool _isInitialized = false;
+  static Isolate? _isolate;
+  static SendPort? _isolatePort;
+  static bool _isInitialized = false;
+  static String? _loadedModelPath;
+  String? lastError;
 
-  static const int _contextSize = 2048;
-  static const int _batchSize = 512;
-  static const int _gpuLayers = 0; // CPU-only for compatibility
-
-  /// Whether the client is ready for inference
   bool get isInitialized => _isInitialized;
 
-  /// Initialize the llama.cpp client
-  ///
-  /// [modelPath] - Path to Gemma E2B GGUF model file
-  /// [onProgress] - Callback for loading progress
+  /// Ensures any previous model is fully cleaned up before proceeding.
+  static Future<void> ensureCleanup() async {
+    if (_isolatePort != null) {
+      try {
+        final replyPort = ReceivePort();
+        _isolatePort!.send({'cmd': 'dispose', 'replyPort': replyPort.sendPort});
+        await replyPort.first.timeout(const Duration(seconds: 10));
+      } catch (_) {}
+    }
+    _isolate?.kill();
+    _isolate = null;
+    _isolatePort = null;
+    _isInitialized = false;
+    _loadedModelPath = null;
+  }
+
   Future<bool> initialize({
     required String modelPath,
-    DownloadProgressCallback? onProgress,
-    DownloadStateCallback? onStateChange,
+    void Function(double progress)? onProgress,
   }) async {
-    try {
-      onStateChange?.call(ModelDownloadState.downloading);
+    // If same model is already loaded, reuse it
+    if (_isInitialized && _loadedModelPath == modelPath && _isolatePort != null) {
+      onProgress?.call(1.0);
+      return true;
+    }
 
-      // Check if model file exists
+    // Clean up any previous instance
+    await ensureCleanup();
+
+    final info = StringBuffer();
+
+    try {
+      onProgress?.call(0.0);
+
       final file = File(modelPath);
       if (!await file.exists()) {
-        onStateChange?.call(ModelDownloadState.error);
+        lastError = 'Model file not found: $modelPath';
         return false;
       }
 
-      // Initialize llama.cpp
-      // This loads the model into memory
-      final params = ModelParams(
-        path: modelPath,
-        nGpuLayers: _gpuLayers, // CPU inference for broad compatibility
+      final fileSize = await file.length();
+      info.writeln('Model: ${(fileSize / 1024 / 1024).toStringAsFixed(0)} MB');
+
+      final handle = await file.open();
+      final magic = await handle.read(4);
+      await handle.close();
+      if (String.fromCharCodes(magic) != 'GGUF') {
+        lastError = '${info}Not a valid GGUF file.';
+        return false;
+      }
+
+      onProgress?.call(0.1);
+
+      String? libraryPath;
+      if (Platform.isAndroid) {
+        libraryPath = 'libmtmd.so';
+      } else if (Platform.isIOS) {
+        final execPath = Platform.resolvedExecutable;
+        final bundlePath = execPath.substring(0, execPath.lastIndexOf('/'));
+        libraryPath = '$bundlePath/Frameworks/libllama.dylib';
+      }
+      info.writeln('Library: ${libraryPath ?? "process"}');
+
+      onProgress?.call(0.2);
+
+      final recvPort = ReceivePort();
+      _isolate = await Isolate.spawn(
+        _llamaIsolateEntry,
+        [recvPort.sendPort, modelPath, libraryPath],
       );
 
-      _llama = await Llama.load(
-        modelParams: params,
-        contextParams: ContextParams(
-          nCtx: _contextSize,
-          nBatch: _batchSize,
-        ),
-      );
+      onProgress?.call(0.3);
+      info.writeln('Loading model in background...');
 
-      _isInitialized = true;
-      onStateChange?.call(ModelDownloadState.ready);
-      onProgress?.call(1.0);
+      final response = await recvPort.first.timeout(
+        const Duration(seconds: 180),
+        onTimeout: () => {'status': 'error', 'error': 'Timed out after 180s'},
+      ) as Map;
 
-      return true;
-    } catch (e) {
+      if (response['status'] == 'ready') {
+        _isolatePort = response['port'] as SendPort;
+        _isInitialized = true;
+        _loadedModelPath = modelPath;
+        onProgress?.call(1.0);
+        return true;
+      } else {
+        lastError = '${info}Load failed: ${response['error']}';
+        _isolate?.kill();
+        _isolate = null;
+        return false;
+      }
+    } catch (e, stackTrace) {
       _isInitialized = false;
-      onStateChange?.call(ModelDownloadState.error);
-      print('LlamaClient initialization failed: $e');
+      lastError = '${info}Init failed: $e\n$stackTrace';
       return false;
     }
   }
 
-  /// Run inference with text prompt
-  ///
-  /// For multimodal (images), we need to use a vision model or
-  /// process images separately. Gemma 4 E2B is multimodal but
-  /// llama.cpp may need specific vision support.
-  ///
-  /// [prompt] - The text prompt
-  /// [images] - Optional images (requires vision model support)
-  /// [maxTokens] - Maximum tokens to generate
   Future<GemmaResponse> chat({
     required String prompt,
     List<Uint8List> images = const [],
     double temperature = 0.0,
     int maxTokens = 2048,
+    void Function(double progress, {String? phase})? onProgress,
   }) async {
-    if (!_isInitialized || _llama == null) {
-      return GemmaResponse.error(
-        'LlamaClient not initialized. Call initialize() first.',
-      );
+    if (!_isInitialized || _isolatePort == null) {
+      return GemmaResponse.error('Not initialized.');
     }
 
     final stopwatch = Stopwatch()..start();
 
+    final replyPort = ReceivePort();
+    var lastProgress = 0.0;
+    String? lastPhase;
+    Timer? heartbeat;
+    if (onProgress != null) {
+      heartbeat = Timer.periodic(const Duration(seconds: 1), (_) {
+        onProgress(lastProgress, phase: lastPhase);
+      });
+    }
     try {
-      // TODO: Handle images if vision support available
-      // For now, text-only inference
-      if (images.isNotEmpty) {
-        print('Warning: Image input not yet supported in llama.cpp client');
+      _isolatePort!.send({
+        'cmd': 'chat',
+        'prompt': prompt,
+        'maxTokens': maxTokens,
+        'replyPort': replyPort.sendPort,
+      });
+
+      Map<String, dynamic>? finalMessage;
+      await for (final raw in replyPort.timeout(
+        const Duration(seconds: 1800),
+        onTimeout: (s) => s.close(),
+      )) {
+        final msg = Map<String, dynamic>.from(raw as Map);
+        if (msg.containsKey('progress')) {
+          lastProgress = (msg['progress'] as num).toDouble();
+          if (msg.containsKey('phase')) {
+            lastPhase = msg['phase'] as String?;
+          }
+          onProgress?.call(lastProgress, phase: lastPhase);
+        } else if (msg.containsKey('result') || msg.containsKey('error')) {
+          finalMessage = msg;
+          break;
+        }
       }
 
-      // Create sampling parameters
-      final samplingParams = SamplingParams(
-        nPredict: maxTokens,
-        temp: temperature,
-        topK: 1, // Deterministic for structured output
-      );
-
-      // Run inference
-      final response = await _llama!.prompt(
-        prompt: prompt,
-        samplingParams: samplingParams,
-      );
-
       stopwatch.stop();
+      heartbeat?.cancel();
+      heartbeat = null;
 
-      return GemmaResponse(
-        rawText: response,
+      if (finalMessage == null) {
+        return GemmaResponse.error(
+          'Inference stalled (no progress for 30 minutes).',
+          elapsed: stopwatch.elapsed,
+        );
+      }
+
+      if (finalMessage.containsKey('result')) {
+        onProgress?.call(1.0, phase: 'Done');
+        return GemmaResponse(
+          rawText: finalMessage['result'] as String,
+          elapsed: stopwatch.elapsed,
+        );
+      }
+      return GemmaResponse.error(
+        finalMessage['error'] as String,
         elapsed: stopwatch.elapsed,
       );
     } catch (e) {
       stopwatch.stop();
-      return GemmaResponse.error(
-        'Inference failed: $e',
-        elapsed: stopwatch.elapsed,
-      );
+      return GemmaResponse.error('Inference failed: $e', elapsed: stopwatch.elapsed);
+    } finally {
+      heartbeat?.cancel();
+      replyPort.close();
     }
   }
 
-  /// Run inference with images
-  ///
-  /// Requires llama.cpp built with CLIP/vision support
-  /// and a vision-capable model.
   Future<GemmaResponse> chatWithImages({
     required String prompt,
     required List<Uint8List> images,
     double temperature = 0.0,
     int maxTokens = 2048,
   }) async {
-    // For vision support, we need:
-    // 1. llama.cpp built with LLAMA_CLIP=ON
-    // 2. A vision projector file (mmproj)
-    // 3. Image preprocessing to llava format
-    //
-    // For now, fall back to text-only with warning
-    print('Vision inference requested but not yet implemented');
-    return chat(
-      prompt: prompt,
-      temperature: temperature,
-      maxTokens: maxTokens,
-    );
+    return chat(prompt: prompt, temperature: temperature, maxTokens: maxTokens);
   }
 
-  /// Get model info
-  Map<String, dynamic> getModelInfo() {
-    if (_llama == null) {
-      return {'status': 'not_loaded'};
-    }
-
-    return {
-      'status': 'loaded',
-      'context_size': _contextSize,
-      'batch_size': _batchSize,
-      'gpu_layers': _gpuLayers,
-    };
-  }
-
-  /// Dispose resources
-  void dispose() {
-    _llama?.dispose();
-    _llama = null;
-    _isInitialized = false;
+  Future<void> dispose() async {
+    await ensureCleanup();
   }
 }
 
 /// Model converter helper
-///
-/// Gemma 4 E2B comes in a specific format that needs conversion to GGUF
-/// for use with llama.cpp.
 class ModelConverter {
-  /// Convert Gemma E2B model to GGUF format
-  ///
-  /// This requires the convert.py script from llama.cpp
-  /// and should be done as a build step, not at runtime.
-  static Future<bool> convertModel({
-    required String inputPath,
-    required String outputPath,
-    int quantizationBits = 4, // Q4_K_M for 2B models
-  }) async {
-    // This is a placeholder - actual conversion happens at build time
-    // using llama.cpp's convert_hf_to_gguf.py
-    print('Model conversion should be done at build time:');
-    print('  python convert_hf_to_gguf.py $inputPath --outfile $outputPath');
-    return false;
-  }
-
-  /// Check if a file is a valid GGUF model
   static Future<bool> isValidGguf(String path) async {
     try {
       final file = File(path);
       if (!await file.exists()) return false;
-
-      // GGUF files start with magic bytes "GGUF"
       final bytes = await file.openRead(0, 4).first;
       final magic = String.fromCharCodes(bytes);
       return magic == 'GGUF';
@@ -218,62 +350,4 @@ class ModelConverter {
       return false;
     }
   }
-}
-
-/// Build instructions helper
-class LlamaBuildInstructions {
-  static const String ios = '''
-# Build llama.cpp for iOS
-
-1. Clone llama.cpp:
-   git clone https://github.com/ggerganov/llama.cpp.git
-   cd llama.cpp
-
-2. Build for iOS (arm64):
-   cmake -B build-ios -DCMAKE_SYSTEM_NAME=iOS \
-     -DCMAKE_OSX_ARCHITECTURES=arm64 \
-     -DLLAMA_BUILD_EXAMPLES=OFF \
-     -DBUILD_SHARED_LIBS=ON
-   cmake --build build-ios --config Release
-
-3. Copy library to Flutter project:
-   cp build-ios/libllama.dylib ios/Frameworks/
-'''
-
-  static const String android = '''
-# Build llama.cpp for Android
-
-1. Install Android NDK
-
-2. Clone llama.cpp:
-   git clone https://github.com/ggerganov/llama.cpp.git
-   cd llama.cpp
-
-3. Build for Android (arm64-v8a):
-   cmake -B build-android \
-     -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake \
-     -DANDROID_ABI=arm64-v8a \
-     -DANDROID_PLATFORM=android-24 \
-     -DLLAMA_BUILD_EXAMPLES=OFF \
-     -DBUILD_SHARED_LIBS=ON
-   cmake --build build-android --config Release
-
-4. Copy library to Flutter project:
-   cp build-android/libllama.so android/app/src/main/jniLibs/arm64-v8a/
-'''
-
-  static const String modelConversion = '''
-# Convert Gemma 4 E2B to GGUF
-
-1. Download Gemma 4 E2B from Hugging Face:
-   huggingface-cli download google/gemma-4-2b-it-e2b
-
-2. Convert to GGUF:
-   python llama.cpp/convert_hf_to_gguf.py \
-     models/gemma-4-2b-it-e2b \
-     --outfile gemma-4-2b-it-e2b.gguf \
-     --outtype q4_k_m
-
-3. Copy to app assets or download at runtime
-'''
 }
