@@ -1,7 +1,7 @@
 name: civiclens
 description: Privacy-first civic document intelligence for Massachusetts residents
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -25,10 +25,19 @@ dependencies:
   crypto: ^3.0.3
 
   # llama.cpp for on-device inference (replaces deprecated MediaPipe)
-  llama_cpp_dart: ^0.0.5
+  # Vendored with patched FFI structs for llama.cpp commit d9a12c82f (Gemma 4 support)
+  # See mobile/ARCHITECTURE.md "Challenge 3" for why this is vendored
+  llama_cpp_dart:
+    path: ./packages/llama_cpp_dart
 
   # Google ML Kit for on-device OCR
   google_mlkit_text_recognition: ^0.13.0
+
+  # System share sheet (packet summary)
+  share_plus: ^10.1.4
+
+  # App version label (Settings / About)
+  package_info_plus: ^8.1.2
 
   # For blur detection (not needed - using image package instead)
   # google_mlkit_commons: ^0.7.1
@@ -37,8 +46,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/
+    - assets/placeholder/
+    - assets/test_docs/
