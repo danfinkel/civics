@@ -10,7 +10,7 @@
 
 ## Overview
 
-This document provides a detailed specification for migrating the CivicLens application from the original "CivicLens Institutional" design to the updated "Prism" design system. The Prism design maintains the same core design tokens (colors, typography) while introducing refined visual styling, improved hierarchy, and enhanced component patterns.
+This document provides a detailed specification for migrating the CivicLens application from the original "CivicLens Institutional" design to the updated "Prism" design system. The Prism design maintains the same core color tokens while adopting **Civic Prism** typography (Space Grotesk + Public Sans per Stitch design-system assets), plus refined visual styling, improved hierarchy, and enhanced component patterns.
 
 **Key Principle:** Migration should be additive where possible—existing functionality remains intact while visual layers are enhanced.
 
@@ -59,12 +59,12 @@ These remain identical between designs:
 | Success | `#10B981` | High confidence |
 | Warning | `#F59E0B` | Medium confidence |
 | Error | `#EF4444` | Low confidence |
-| Font Family | Inter | All text |
 
 ### New/Modified Tokens
 
 | Token | Original | Prism | Change |
 |-------|----------|-------|--------|
+| Typography | Inter (Institutional / root theme) | **Space Grotesk** (display, headlines, app bar titles) + **Public Sans** (body, labels, buttons) | Match Stitch **Civic Prism** design-system assets; root `get_project.designTheme` may still list Inter |
 | Card Elevation | 0dp (flat) | 2-4dp (subtle shadow) | Add depth |
 | Border Radius | 4px uniform | 8-12px variable | Softer corners |
 | Gradient Overlays | None | Subtle prism gradients | Visual interest |

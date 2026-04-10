@@ -1,11 +1,7 @@
 /// Integration test for llama.cpp on-device inference
 ///
 /// Run on device:
-///   flutter test integration_test/llama_test.dart -d <device_id>
-///
-/// Prerequisites:
-///   - Copy gemma-4-E2B-it-Q4_K_M.gguf to app Documents/models/
-///   - Build llama.cpp for iOS: ./scripts/build/build_llama_ios.sh
+///   flutter test integration_test/llama_test.dart -d <device-id>
 
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,47 +20,59 @@ void main() {
       client.dispose();
     });
 
-    test('model file exists in app documents', () async {
+    test('find and load model', () async {
+      // Get app documents directory
       final appDir = await getApplicationDocumentsDirectory();
-      final modelPath = '${appDir.path}/models/gemma-4-E2B-it-Q4_K_M.gguf';
-      final file = File(modelPath);
+      print('Documents directory: ${appDir.path}');
 
-      expect(await file.exists(), isTrue,
-          reason: 'Model not found at $modelPath');
-    });
+      // List all files in Documents
+      final files = await appDir.list().toList();
+      print('Files in Documents:');
+      for (final file in files) {
+        print('  - ${file.path}');
+        if (file is File) {
+          final stat = await file.stat();
+          print('    Size: ${stat.size} bytes');
+        }
+      }
 
-    test('initialize and load model', () async {
-      final appDir = await getApplicationDocumentsDirectory();
-      final modelPath = '${appDir.path}/models/gemma-4-E2B-it-Q4_K_M.gguf';
+      // Look for model
+      final modelPath = '${appDir.path}/gemma-4-E2B-it-Q4_K_M.gguf';
+      print('Looking for model at: $modelPath');
 
-      final success = await client.initialize(
-        modelPath: modelPath,
-        onProgress: (progress) {
-          print('Loading: ${(progress * 100).toStringAsFixed(1)}%');
-        },
-      );
+      final modelFile = File(modelPath);
+      final exists = await modelFile.exists();
+      print('Model exists: $exists');
 
-      expect(success, isTrue);
-      expect(client.isInitialized, isTrue);
-    }, timeout: const Timeout(Duration(minutes: 5)));
+      expect(exists, isTrue, reason: 'Model not found at $modelPath');
 
-    test('simple inference', () async {
-      final appDir = await getApplicationDocumentsDirectory();
-      final modelPath = '${appDir.path}/models/gemma-4-E2B-it-Q4_K_M.gguf';
+      if (exists) {
+        final size = await modelFile.length();
+        print('Model size: ${(size / 1024 / 1024 / 1024).toStringAsFixed(2)} GB');
 
-      final initSuccess = await client.initialize(modelPath: modelPath);
-      expect(initSuccess, isTrue);
+        // Try to initialize
+        print('Initializing model...');
+        final success = await client.initialize(
+          modelPath: modelPath,
+          onProgress: (progress) {
+            print('Loading progress: ${(progress * 100).toStringAsFixed(0)}%');
+          },
+        );
 
-      final response = await client.chat(
-        prompt: 'What is 2+2? Answer with just the number.',
-        maxTokens: 10,
-      );
+        expect(success, isTrue, reason: 'Failed to initialize model');
+        print('Model initialized successfully!');
 
-      print('Response: ${response.rawText}');
-      print('Time: ${response.elapsed?.inMilliseconds}ms');
+        // Run inference
+        print('Running inference...');
+        final response = await client.chat(
+          prompt: 'What is 2+2? Answer with just the number.',
+          maxTokens: 10,
+        );
 
-      expect(response.isSuccess, isTrue);
-      expect(response.rawText, contains('4'));
-    }, timeout: const Timeout(Duration(minutes: 5)));
+        print('Response: ${response.rawText}');
+        expect(response.isSuccess, isTrue);
+        expect(response.rawText, contains('4'));
+      }
+    }, timeout: const Timeout(Duration(minutes: 10)));
   });
 }

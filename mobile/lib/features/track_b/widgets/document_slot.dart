@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/imaging/document_capture.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/theme/prism_tokens.dart';
+import '../../../shared/theme/prism_typography.dart';
 import '../../../shared/widgets/prism/prism_slot_step.dart';
 
 class DocumentSlot extends StatefulWidget {
@@ -54,9 +55,10 @@ class _DocumentSlotState extends State<DocumentSlot> {
                   children: [
                     Text(
                       slot.title,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                      style: PrismTypography.spaceGrotesk(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -125,7 +127,7 @@ class _DocumentSlotState extends State<DocumentSlot> {
 
   /// Design spec: 48×48 thumbnail, check overlay when verified; blur + retake when unclear.
   Widget _buildDocumentPreview(BuildContext context, CapturedDocument doc) {
-    final hasBlurWarning = doc.blurResult.isBlurry;
+    final hasBlurWarning = doc.shouldWarnBlur;
     const thumb = 48.0;
 
     return Row(
@@ -348,7 +350,7 @@ class _ActionButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: PrismTypography.publicSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: AppColors.primary,

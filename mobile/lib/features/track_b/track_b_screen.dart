@@ -7,6 +7,7 @@ import '../../core/models/track_b_result.dart';
 import '../../shared/navigation/prism_page_routes.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/theme/prism_tokens.dart';
+import '../../shared/theme/prism_typography.dart';
 import '../../shared/widgets/prism/prism_shimmer.dart';
 import 'track_b_controller.dart' hide DocumentSlot;
 import 'widgets/document_slot.dart';
@@ -73,7 +74,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
             const SizedBox(height: 8),
             Text(
               'Blur score: ${doc.blurResult.score.toStringAsFixed(1)}',
-              style: const TextStyle(
+              style: PrismTypography.publicSans(
                 fontSize: 12,
                 color: AppColors.neutral,
               ),
@@ -82,13 +83,28 @@ class _TrackBScreenState extends State<TrackBScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+              final slotIndex = _controller.slots.indexWhere(
+                (s) => s.document?.id == doc.id,
+              );
+              final current = slotIndex >= 0
+                  ? _controller.slots[slotIndex].document
+                  : null;
+              if (current != null) {
+                setState(() {
+                  _controller.setDocument(
+                    slotIndex,
+                    current.copyWith(acceptedDespiteBlur: true),
+                  );
+                });
+              }
+            },
             child: const Text('Use Anyway'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // Clear the blurry document
               setState(() {
                 _controller.clearDocument(
                   _controller.slots.indexWhere(
@@ -256,22 +272,22 @@ class _TrackBScreenState extends State<TrackBScreen> {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Step 1 of 2',
-                        style: TextStyle(
-                          color: Colors.white,
+                        style: PrismTypography.publicSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Upload Documents',
-                        style: TextStyle(
+                        style: PrismTypography.spaceGrotesk(
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -404,7 +420,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
               Text(
                 progress.message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: PrismTypography.spaceGrotesk(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -412,7 +428,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
               const SizedBox(height: 8),
               Text(
                 '$percent% complete',
-                style: const TextStyle(
+                style: PrismTypography.publicSans(
                   fontSize: 14,
                   color: AppColors.neutral,
                 ),
@@ -421,7 +437,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
               Text(
                 'On-device analysis is usually under a minute on recent iPhones.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: PrismTypography.publicSans(
                   fontSize: 14,
                   color: AppColors.neutral.withValues(alpha: 0.85),
                 ),
@@ -518,10 +534,10 @@ class _TrackBScreenState extends State<TrackBScreen> {
                             result.duplicateCategoryExplanation.isNotEmpty
                                 ? result.duplicateCategoryExplanation
                                 : 'Two leases count as one proof — you need a second document type from a different category',
-                            style: const TextStyle(
+                            style: PrismTypography.publicSans(
                               fontSize: 14,
                               height: 1.45,
-                              color: Color(0xFF92400E),
+                              color: const Color(0xFF92400E),
                             ),
                           ),
                         ),

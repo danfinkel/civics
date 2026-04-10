@@ -48,37 +48,109 @@ class AppTheme {
         outline: AppColors.outline,
         error: AppColors.error,
       ),
-      textTheme: GoogleFonts.interTextTheme().copyWith(
-        headlineLarge: GoogleFonts.inter(
+      // Civic Prism (Stitch): Space Grotesk — display/headlines; Public Sans — body/labels
+      textTheme: GoogleFonts.publicSansTextTheme().copyWith(
+        headlineLarge: GoogleFonts.spaceGrotesk(
           fontSize: 24,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.02,
           color: AppColors.primary,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: GoogleFonts.spaceGrotesk(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           height: 1.4,
           letterSpacing: -0.02,
           color: AppColors.primary,
         ),
-        bodyLarge: GoogleFonts.inter(
+        titleLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.02,
+          color: AppColors.primary,
+        ),
+        titleMedium: GoogleFonts.spaceGrotesk(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.02,
+          color: AppColors.primary,
+        ),
+        bodyLarge: GoogleFonts.publicSans(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           height: 1.5,
           color: AppColors.primary,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: GoogleFonts.publicSans(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.5,
           color: AppColors.primary,
         ),
-        labelSmall: GoogleFonts.inter(
+        labelSmall: GoogleFonts.publicSans(
           fontSize: 12,
           fontWeight: FontWeight.w500,
           height: 1.4,
           color: AppColors.neutral,
+        ),
+        titleSmall: GoogleFonts.spaceGrotesk(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.02,
+          color: AppColors.primary,
+          height: 1.25,
+        ),
+        bodySmall: GoogleFonts.publicSans(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          height: 1.35,
+          color: AppColors.neutral,
+        ),
+        labelLarge: GoogleFonts.publicSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          height: 1.3,
+          color: AppColors.primary,
+        ),
+        labelMedium: GoogleFonts.publicSans(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          height: 1.3,
+          color: AppColors.primary,
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        titleTextStyle: GoogleFonts.publicSans(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primary,
+        ),
+        subtitleTextStyle: GoogleFonts.publicSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: AppColors.neutral,
+          height: 1.35,
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        titleTextStyle: GoogleFonts.spaceGrotesk(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.02,
+          color: AppColors.primary,
+        ),
+        contentTextStyle: GoogleFonts.publicSans(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          height: 1.45,
+          color: AppColors.primary,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        contentTextStyle: GoogleFonts.publicSans(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: Colors.white,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -92,7 +164,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.publicSans(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -107,7 +179,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.publicSans(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -126,7 +198,7 @@ class AppTheme {
         foregroundColor: AppColors.primary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.spaceGrotesk(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           letterSpacing: -0.02,

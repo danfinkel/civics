@@ -12,6 +12,7 @@ class PacketStatusHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
     final total = result.requirements.length;
     final ok = result.satisfiedCount;
     final allSatisfied = total > 0 && ok == total;
@@ -68,23 +69,22 @@ class PacketStatusHero extends StatelessWidget {
                     ),
                     child: Text(
                       pill,
-                      style: const TextStyle(
-                        fontSize: 10,
+                      style: tt.labelSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
                         color: Colors.white,
+                        fontSize: 10,
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     'BPS Registration Center',
-                    style: TextStyle(
+                    style: tt.titleLarge?.copyWith(
+                      color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                       height: 1.25,
-                      letterSpacing: -0.02,
-                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -92,8 +92,7 @@ class PacketStatusHero extends StatelessWidget {
                     total == 0
                         ? 'On-device review — add documents to see your checklist.'
                         : 'Registration packet — $ok of $total requirements satisfied on this device.',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: tt.bodyMedium?.copyWith(
                       height: 1.4,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),

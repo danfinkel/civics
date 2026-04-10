@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/prism_typography.dart';
 
 /// Status badge types for the CivicLens app
 enum StatusType {
@@ -43,7 +44,7 @@ class StatusBadge extends StatelessWidget {
           ],
           Text(
             label ?? defaultLabel,
-            style: TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: color,

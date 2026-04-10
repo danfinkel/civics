@@ -1,8 +1,7 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
+import '../../shared/theme/prism_typography.dart';
 import 'blur_detector.dart';
 import 'image_processor.dart';
 
@@ -14,15 +13,40 @@ class CapturedDocument {
   final DateTime capturedAt;
   final String? source; // 'camera' or 'gallery'
 
+  /// User chose "Use anyway" after a blur warning; hide aggressive blur UX but keep score.
+  final bool acceptedDespiteBlur;
+
   const CapturedDocument({
     required this.id,
     required this.imageBytes,
     required this.blurResult,
     required this.capturedAt,
     this.source,
+    this.acceptedDespiteBlur = false,
   });
 
-  bool get isClear => !blurResult.isBlurry;
+  bool get isClear => !blurResult.isBlurry || acceptedDespiteBlur;
+
+  /// Show thumbnail treatment / retake nudge when the image is blurry and not overridden.
+  bool get shouldWarnBlur => blurResult.isBlurry && !acceptedDespiteBlur;
+
+  CapturedDocument copyWith({
+    String? id,
+    Uint8List? imageBytes,
+    BlurResult? blurResult,
+    DateTime? capturedAt,
+    String? source,
+    bool? acceptedDespiteBlur,
+  }) {
+    return CapturedDocument(
+      id: id ?? this.id,
+      imageBytes: imageBytes ?? this.imageBytes,
+      blurResult: blurResult ?? this.blurResult,
+      capturedAt: capturedAt ?? this.capturedAt,
+      source: source ?? this.source,
+      acceptedDespiteBlur: acceptedDespiteBlur ?? this.acceptedDespiteBlur,
+    );
+  }
 }
 
 /// Handles document capture from camera or gallery
@@ -213,7 +237,7 @@ class _CaptureButton extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: PrismTypography.publicSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),

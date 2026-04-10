@@ -70,7 +70,7 @@ class ResponseParser {
 
     if (jsonResult == null) {
       return ParseResult.failure(
-        'Failed to parse JSON after all retry strategies',
+        'Could not parse JSON from the model. Try again; if it keeps failing, use clearer photos or shorter documents.',
         raw,
       );
     }
@@ -94,7 +94,7 @@ class ResponseParser {
 
     if (jsonResult == null) {
       return ParseResult.failure(
-        'Failed to parse JSON after all retry strategies',
+        'Could not parse JSON from the model. Try again; if it keeps failing, use clearer photos or shorter documents.',
         raw,
       );
     }
@@ -110,53 +110,173 @@ class ResponseParser {
     }
   }
 
-  /// Try multiple parsing strategies
-  /// 1. Direct JSON parse
-  /// 2. Wrap in braces if missing
-  /// 3. Strip markdown fences
+  /// Try multiple parsing strategies (direct, fences, balanced brace/array,
+  /// trailing-comma repair, root-level requirements array).
   static Map<String, dynamic>? _parseWithRetry(String raw) {
-    // Strategy 1: Direct parse
-    try {
-      return json.decode(raw) as Map<String, dynamic>;
-    } catch (_) {}
+    final trimmed = raw.trim().replaceFirst(RegExp(r'^\uFEFF'), '');
+    final fromMarkdown = _extractJsonFromMarkdown(raw);
+    final bases = <String>[
+      trimmed,
+      _stripMarkdownFences(trimmed),
+      if (fromMarkdown != null) fromMarkdown,
+    ];
 
-    // Strategy 2: Try wrapping bare key:value in braces
-    final trimmed = raw.trim();
-    if (!trimmed.startsWith('{')) {
-      try {
-        return json.decode('{$trimmed}') as Map<String, dynamic>;
-      } catch (_) {}
-    }
+    for (final b in bases) {
+      final t = b.trim();
+      if (t.isEmpty) continue;
 
-    // Strategy 3: Strip markdown fences and retry
-    final withoutFences = _stripMarkdownFences(trimmed);
-    if (withoutFences != trimmed) {
-      try {
-        return json.decode(withoutFences) as Map<String, dynamic>;
-      } catch (_) {}
+      // 1. Whole string (fixes valid JSON; try before balanced slices so we
+      //    don't grab the first `{` inside a "requirements" array).
+      var map = _decodeToObjectMap(t);
+      if (map != null) return map;
 
-      // Try with braces if still failing
-      if (!withoutFences.startsWith('{')) {
-        try {
-          return json.decode('{$withoutFences}') as Map<String, dynamic>;
-        } catch (_) {}
+      // 2. E4B-style: `"requirements": [...], ...` with outer `{` `}` omitted
+      if (!t.startsWith('{')) {
+        map = _decodeToObjectMap('{$t}');
+        if (map != null) return map;
+      }
+
+      // 3. Balanced object / array slices (prose + JSON, or truncated output)
+      final obj = _extractBalancedJsonObject(t);
+      if (obj != null) {
+        map = _decodeToObjectMap(obj);
+        if (map != null) return map;
+      }
+      final arr = _extractBalancedJsonArray(t);
+      if (arr != null) {
+        map = _decodeToObjectMap(arr);
+        if (map != null) return map;
       }
     }
 
-    // Strategy 4: Extract JSON from text
-    final extracted = _extractJsonFromText(raw);
-    if (extracted != null) {
-      return extracted;
-    }
+    return null;
+  }
 
-    // Strategy 5: Extract JSON from markdown code block
-    final markdownExtracted = _extractJsonFromMarkdown(raw);
-    if (markdownExtracted != null) {
+  /// Decode JSON to a map Track B / Track A can consume (object or requirements-only array).
+  static Map<String, dynamic>? _decodeToObjectMap(String s) {
+    dynamic decoded;
+    try {
+      decoded = json.decode(s);
+    } catch (_) {
       try {
-        return json.decode(markdownExtracted) as Map<String, dynamic>;
-      } catch (_) {}
+        decoded = json.decode(_removeTrailingCommas(s));
+      } catch (_) {
+        return null;
+      }
     }
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+    if (decoded is List) {
+      return _tryWrapRequirementsList(decoded);
+    }
+    return null;
+  }
 
+  static String _removeTrailingCommas(String json) {
+    return json.replaceAllMapped(
+      RegExp(r',(\s*[\]}])'),
+      (m) => m.group(1)!,
+    );
+  }
+
+  /// If the model returns only the requirements array, normalize to full Track B shape.
+  static Map<String, dynamic>? _tryWrapRequirementsList(List<dynamic> decoded) {
+    if (decoded.isEmpty) {
+      return {
+        'requirements': <dynamic>[],
+        'duplicate_category_flag': false,
+        'duplicate_category_explanation': '',
+        'family_summary': '',
+      };
+    }
+    final first = decoded.first;
+    if (first is! Map) return null;
+    final keys = first.keys.map((k) => k.toString().toLowerCase()).toSet();
+    if (keys.contains('requirement') ||
+        keys.contains('status') ||
+        keys.contains('matched_document')) {
+      return {
+        'requirements': decoded,
+        'duplicate_category_flag': false,
+        'duplicate_category_explanation': '',
+        'family_summary': '',
+      };
+    }
+    return null;
+  }
+
+  /// First `{` … matching `}` with string/escape awareness (fixes `}` inside evidence strings).
+  static String? _extractBalancedJsonObject(String text) {
+    final start = text.indexOf('{');
+    if (start == -1) return null;
+    var depth = 0;
+    var inString = false;
+    var escape = false;
+    for (var i = start; i < text.length; i++) {
+      final ch = text[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (inString) {
+        if (ch == r'\') {
+          escape = true;
+        } else if (ch == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch == '"') {
+        inString = true;
+        continue;
+      }
+      if (ch == '{') {
+        depth++;
+      } else if (ch == '}') {
+        depth--;
+        if (depth == 0) {
+          return text.substring(start, i + 1);
+        }
+      }
+    }
+    return null;
+  }
+
+  /// First `[` … matching `]` with string/escape awareness.
+  static String? _extractBalancedJsonArray(String text) {
+    final start = text.indexOf('[');
+    if (start == -1) return null;
+    var depth = 0;
+    var inString = false;
+    var escape = false;
+    for (var i = start; i < text.length; i++) {
+      final ch = text[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (inString) {
+        if (ch == r'\') {
+          escape = true;
+        } else if (ch == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch == '"') {
+        inString = true;
+        continue;
+      }
+      if (ch == '[') {
+        depth++;
+      } else if (ch == ']') {
+        depth--;
+        if (depth == 0) {
+          return text.substring(start, i + 1);
+        }
+      }
+    }
     return null;
   }
 
@@ -172,22 +292,6 @@ class ResponseParser {
     result = result.replaceFirst(RegExp(r'\s*```\s*$'), '');
 
     return result.trim();
-  }
-
-  /// Try to extract JSON object from surrounding text
-  static Map<String, dynamic>? _extractJsonFromText(String text) {
-    // Find the first { and last }
-    final startIndex = text.indexOf('{');
-    final endIndex = text.lastIndexOf('}');
-
-    if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-      final jsonText = text.substring(startIndex, endIndex + 1);
-      try {
-        return json.decode(jsonText) as Map<String, dynamic>;
-      } catch (_) {}
-    }
-
-    return null;
   }
 
   /// Extract JSON content from markdown code block

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/prism_tokens.dart';
+import '../../theme/prism_typography.dart';
 
 /// Prism "crystal" status badge (gradient + asymmetric corners).
 class CrystalStatusBadge extends StatelessWidget {
@@ -40,7 +41,7 @@ class CrystalStatusBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: statusColor,

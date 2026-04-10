@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/track_a_result.dart';
 import '../../../shared/theme/prism_tokens.dart';
+import '../../../shared/theme/prism_typography.dart';
 
 class ConfidenceBadge extends StatelessWidget {
   final ConfidenceLevel level;
@@ -45,7 +46,7 @@ class ConfidenceBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: color,

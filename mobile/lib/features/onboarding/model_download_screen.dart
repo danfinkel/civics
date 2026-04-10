@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/inference/gemma_client.dart';
 import '../../shared/navigation/prism_page_routes.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/theme/prism_typography.dart';
 import '../track_b/track_b_screen.dart';
 
 enum DownloadState {
@@ -146,9 +147,9 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
           color: AppColors.primary,
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'CivicLens uses AI to analyze your documents privately on your device.',
-          style: TextStyle(
+          style: PrismTypography.publicSans(
             fontSize: 16,
             height: 1.5,
           ),
@@ -170,9 +171,9 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
               Expanded(
                 child: Text(
                   'This requires a one-time download of 2.5GB. Connect to WiFi recommended.',
-                  style: TextStyle(
+                  style: PrismTypography.publicSans(
                     fontSize: 14,
-                    color: Color(0xFF92400E),
+                    color: const Color(0xFF92400E),
                   ),
                 ),
               ),
@@ -208,28 +209,25 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
         Center(
           child: Text(
             'Downloading... $percent%',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
+            style: PrismTypography.spaceGrotesk(fontSize: 20),
           ),
         ),
         const SizedBox(height: 8),
         Center(
           child: Text(
             '$mbDownloaded MB of $totalMb MB',
-            style: const TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 14,
               color: AppColors.neutral,
             ),
           ),
         ),
         const SizedBox(height: 24),
-        const Center(
+        Center(
           child: Text(
             'This may take a few minutes. Please keep the app open.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 14,
               color: AppColors.neutral,
             ),
@@ -252,29 +250,26 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
           ),
         ),
         const SizedBox(height: 32),
-        const Center(
+        Center(
           child: Text(
             'Ready',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-            ),
+            style: PrismTypography.spaceGrotesk(fontSize: 24),
           ),
         ),
         const SizedBox(height: 16),
-        const Center(
+        Center(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.shield_outlined,
                 size: 20,
                 color: AppColors.success,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Your documents stay on your device',
-                style: TextStyle(
+                style: PrismTypography.publicSans(
                   fontSize: 16,
                   color: AppColors.success,
                 ),
@@ -303,7 +298,7 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
           child: Text(
             _errorMessage ?? 'Download failed',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 16,
               color: AppColors.error,
             ),

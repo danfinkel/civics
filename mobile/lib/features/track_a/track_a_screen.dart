@@ -1,10 +1,9 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../core/imaging/document_capture.dart';
 import '../../core/models/track_a_result.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/theme/prism_typography.dart';
 import 'track_a_controller.dart';
-import '../track_b/widgets/document_slot.dart';
 import '../track_b/widgets/confidence_badge.dart';
 
 class TrackAScreen extends StatefulWidget {
@@ -64,7 +63,29 @@ class _TrackAScreenState extends State<TrackAScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                if (isNotice) {
+                  final n = _controller.notice;
+                  if (n != null) {
+                    _controller.setNotice(
+                      n.copyWith(acceptedDespiteBlur: true),
+                    );
+                  }
+                } else {
+                  final idx = _controller.supportingDocuments
+                      .indexWhere((d) => d?.id == doc.id);
+                  final d = idx >= 0 ? _controller.supportingDocuments[idx] : null;
+                  if (d != null) {
+                    _controller.setSupportingDocument(
+                      idx,
+                      d.copyWith(acceptedDespiteBlur: true),
+                    );
+                  }
+                }
+              });
+            },
             child: const Text('Use Anyway'),
           ),
           ElevatedButton(
@@ -158,7 +179,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
                 ),
                 child: Text(
                   _controller.notice != null ? 'Step 2 of 2' : 'Step 1 of 2',
-                  style: const TextStyle(
+                  style: PrismTypography.publicSans(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -170,9 +191,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
                 _controller.notice != null
                     ? 'Upload Your Documents'
                     : 'Upload Your Notice',
-                style: const TextStyle(
+                style: PrismTypography.spaceGrotesk(
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -190,12 +211,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
               ] else ...[
                 _buildNoticePreview(),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Your Documents',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: PrismTypography.spaceGrotesk(fontSize: 18),
                 ),
                 const SizedBox(height: 16),
                 // Supporting documents
@@ -217,10 +235,10 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   ? _analyzeDocuments
                   : null,
               child: _isAnalyzing
-                  ? const Row(
+                  ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
+                        const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -228,8 +246,15 @@ class _TrackAScreenState extends State<TrackAScreen> {
                             valueColor: AlwaysStoppedAnimation(Colors.white),
                           ),
                         ),
-                        SizedBox(width: 12),
-                        Text('Analyzing...'),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Analyzing...',
+                          style: PrismTypography.publicSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ],
                     )
                   : const Text('Check My Documents'),
@@ -257,18 +282,15 @@ class _TrackAScreenState extends State<TrackAScreen> {
             color: AppColors.primary,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Upload Your Government Notice',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: PrismTypography.spaceGrotesk(fontSize: 18),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'This is the letter or notice you received requesting documents',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 14,
               color: AppColors.neutral,
             ),
@@ -336,17 +358,17 @@ class _TrackAScreenState extends State<TrackAScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Government Notice',
-                  style: TextStyle(
+                  style: PrismTypography.publicSans(
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                if (notice.blurResult.isBlurry)
+                if (notice.shouldWarnBlur)
                   Text(
                     'Photo unclear — may affect results',
-                    style: TextStyle(
+                    style: PrismTypography.publicSans(
                       fontSize: 12,
                       color: AppColors.warning,
                     ),
@@ -402,7 +424,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
                         )
                       : Text(
                           '$slotNumber',
-                          style: TextStyle(
+                          style: PrismTypography.spaceGrotesk(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: doc != null ? AppColors.success : AppColors.primary,
@@ -414,9 +436,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
               Expanded(
                 child: Text(
                   'Document $slotNumber',
-                  style: const TextStyle(
+                  style: PrismTypography.spaceGrotesk(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -449,7 +471,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                if (doc.blurResult.isBlurry)
+                if (doc.shouldWarnBlur)
                   Row(
                     children: [
                       const Icon(
@@ -460,7 +482,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Photo unclear',
-                        style: TextStyle(
+                        style: PrismTypography.publicSans(
                           fontSize: 14,
                           color: AppColors.warning,
                         ),
@@ -476,9 +498,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
                         color: AppColors.success,
                       ),
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         'Ready',
-                        style: TextStyle(
+                        style: PrismTypography.publicSans(
                           fontSize: 14,
                           color: AppColors.success,
                         ),
@@ -541,20 +563,19 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Response Deadline',
-                        style: TextStyle(
+                        style: PrismTypography.publicSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF92400E),
+                          color: const Color(0xFF92400E),
                         ),
                       ),
                       Text(
                         result.noticeSummary.deadline,
-                        style: const TextStyle(
+                        style: PrismTypography.spaceGrotesk(
                           fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF92400E),
+                          color: const Color(0xFF92400E),
                         ),
                       ),
                     ],
@@ -570,17 +591,17 @@ class _TrackAScreenState extends State<TrackAScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             color: AppColors.lightRed,
-            child: const Row(
+            child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.error_outline,
                   color: AppColors.error,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Notice unclear — please contact DTA at (617) 348-8400',
-                    style: TextStyle(
+                    style: PrismTypography.publicSans(
                       fontSize: 14,
                       color: AppColors.error,
                     ),
@@ -596,12 +617,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text(
+              Text(
                 'Your Proof Pack',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: PrismTypography.spaceGrotesk(fontSize: 20),
               ),
               const SizedBox(height: 16),
               ...result.proofPack.map((item) => _buildProofPackItem(item)),
@@ -616,17 +634,14 @@ class _TrackAScreenState extends State<TrackAScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'What to do next',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: PrismTypography.spaceGrotesk(fontSize: 20),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       result.actionSummary,
-                      style: const TextStyle(
+                      style: PrismTypography.publicSans(
                         fontSize: 16,
                         height: 1.5,
                       ),
@@ -684,9 +699,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
               Expanded(
                 child: Text(
                   item.category,
-                  style: const TextStyle(
+                  style: PrismTypography.spaceGrotesk(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -698,7 +713,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
                 ),
                 child: Text(
                   statusText,
-                  style: TextStyle(
+                  style: PrismTypography.publicSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: statusColor,
@@ -710,7 +725,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
           const SizedBox(height: 8),
           Text(
             item.isMissing ? 'MISSING' : item.matchedDocument,
-            style: TextStyle(
+            style: PrismTypography.publicSans(
               fontSize: 14,
               color: item.isMissing ? AppColors.error : AppColors.neutral,
             ),
@@ -719,11 +734,10 @@ class _TrackAScreenState extends State<TrackAScreen> {
             const SizedBox(height: 8),
             Text(
               item.evidence,
-              style: const TextStyle(
+              style: PrismTypography.publicSans(
                 fontSize: 12,
                 color: AppColors.neutral,
-                fontStyle: FontStyle.italic,
-              ),
+              ).copyWith(fontStyle: FontStyle.italic),
             ),
           ],
           if (item.caveats.isNotEmpty) ...[
@@ -736,9 +750,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
               ),
               child: Text(
                 item.caveats,
-                style: const TextStyle(
+                style: PrismTypography.publicSans(
                   fontSize: 12,
-                  color: Color(0xFF92400E),
+                  color: const Color(0xFF92400E),
                 ),
               ),
             ),
@@ -796,7 +810,7 @@ class _ActionButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: PrismTypography.publicSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: AppColors.primary,

@@ -89,10 +89,19 @@ class TrackBResult {
   }
 
   factory TrackBResult.fromJson(Map<String, dynamic> json) {
+    final reqList = json['requirements'];
+    final requirements = <RequirementResult>[];
+    if (reqList is List) {
+      for (final item in reqList) {
+        if (item is Map) {
+          requirements.add(
+            RequirementResult.fromJson(Map<String, dynamic>.from(item)),
+          );
+        }
+      }
+    }
     return TrackBResult(
-      requirements: (json['requirements'] as List? ?? [])
-          .map((item) => RequirementResult.fromJson(item))
-          .toList(),
+      requirements: requirements,
       duplicateCategoryFlag: json['duplicate_category_flag'] ?? false,
       duplicateCategoryExplanation:
           json['duplicate_category_explanation'] ?? '',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/track_b_result.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/theme/prism_tokens.dart';
+import '../../../shared/theme/prism_typography.dart';
 import '../../../shared/widgets/prism/crystal_status_badge.dart';
 import 'confidence_badge.dart';
 
@@ -54,7 +55,8 @@ class RequirementRow extends StatelessWidget {
                         Expanded(
                           child: Text(
                             requirement.requirement,
-                            style: theme.bodyLarge?.copyWith(
+                            style: PrismTypography.spaceGrotesk(
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -189,9 +191,9 @@ class _SatisfiedChip extends StatelessWidget {
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Text(
+      child: Text(
         'SATISFIED',
-        style: TextStyle(
+        style: PrismTypography.publicSans(
           fontSize: 10,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.7,

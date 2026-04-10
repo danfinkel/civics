@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Public+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#5a6575",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#2f3033",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e3e2e5",
+                    "secondary-container": "#d8e3f6",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#002444",
+                    "surface-container-high": "#e9e8eb",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#4f3300",
+                    "on-tertiary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-background": "#1a1c1e",
+                    "on-primary-container": "#87a4cc",
+                    "on-primary-fixed": "#001c37",
+                    "surface-container": "#eeedf1",
+                    "background": "#faf9fc",
+                    "surface-tint": "#436084",
+                    "secondary-fixed": "#d8e3f6",
+                    "on-surface": "#1a1c1e",
+                    "tertiary-fixed": "#ffddb1",
+                    "on-primary-fixed-variant": "#2a486b",
+                    "primary-fixed": "#d2e4ff",
+                    "tertiary": "#331f00",
+                    "surface": "#faf9fc",
+                    "outline-variant": "#c3c6cf",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#bcc7d9",
+                    "surface-bright": "#faf9fc",
+                    "inverse-primary": "#abc9f2",
+                    "on-tertiary-fixed-variant": "#5f410c",
+                    "surface-dim": "#dad9dd",
+                    "outline": "#73777f",
+                    "on-tertiary-container": "#c49b5f",
+                    "primary-container": "#1a3a5c",
+                    "on-secondary-fixed-variant": "#3d4756",
+                    "tertiary-fixed-dim": "#ecbf80",
+                    "on-surface-variant": "#43474e",
+                    "surface-variant": "#e3e2e5",
+                    "primary-fixed-dim": "#abc9f2",
+                    "on-tertiary-fixed": "#291800",
+                    "on-secondary-fixed": "#111c29",
+                    "surface-container-low": "#f4f3f6",
+                    "on-primary": "#ffffff",
+                    "inverse-on-surface": "#f1f0f3",
+                    "secondary": "#545f6f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": [
+                            "Space Grotesk"
+                    ],
+                    "body": [
+                            "Public Sans"
+                    ],
+                    "label": [
+                            "Public Sans"
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #002444 0%, #1A3A5C 100%);
+        }
+        .amber-glow {
+            box-shadow: 0 0 80px 20px rgba(196, 155, 95, 0.2);
+        }
+        .pattern-overlay {
+            background-image: radial-gradient(#73777f 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+            opacity: 0.08;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface antialiased overflow-x-hidden">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full z-50 bg-[#faf9fc]/70 backdrop-blur-xl">
+<nav class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#1A3A5C] text-2xl" data-icon="account_balance">account_balance</span>
+<span class="text-xl font-bold text-[#1A3A5C] tracking-tighter font-headline">CivicLens</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-[#1A3A5C] font-bold transition-colors font-headline" href="#">Home</a>
+<a class="text-slate-500 hover:bg-slate-200/50 transition-colors px-3 py-1 rounded-xl font-headline" href="#">Framework</a>
+<a class="text-slate-500 hover:bg-slate-200/50 transition-colors px-3 py-1 rounded-xl font-headline" href="#">Transparency</a>
+</div>
+<button class="px-5 py-2.5 rounded-xl bg-primary-container text-white font-headline font-semibold hover:opacity-90 transition-all scale-95 duration-200">
+                Sign In
+            </button>
+</nav>
+</header>
+<main class="relative min-h-screen pt-20 flex flex-col items-center justify-center overflow-hidden">
+<!-- Background Geometric Texture -->
+<div class="absolute inset-0 pattern-overlay pointer-events-none"></div>
+<div class="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<!-- Left Content Column -->
+<div class="lg:col-span-7 flex flex-col items-start gap-8">
+<div class="flex flex-col gap-3">
+<span class="text-on-primary-fixed-variant uppercase tracking-[0.2em] font-label text-sm font-bold">The Digital Architect</span>
+<h1 class="font-headline text-5xl md:text-7xl font-bold text-primary leading-[1.1] tracking-tight">
+                        Navigate Civic Life with <span class="text-on-tertiary-container">Clarity.</span>
+</h1>
+</div>
+<p class="text-xl md:text-2xl text-on-surface-variant max-w-xl leading-relaxed font-light">
+                    Your personal architect for government documents and benefits. Experience the transparency of the lens.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 mt-4">
+<button class="px-8 py-4 rounded-xl hero-gradient text-white font-headline font-bold text-lg hover:scale-[1.02] transition-transform flex items-center gap-2">
+                        Get Started
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="px-8 py-4 rounded-xl bg-surface-container-high text-on-surface font-headline font-semibold text-lg hover:bg-surface-container-highest transition-colors">
+                        Learn how it works
+                    </button>
+</div>
+<!-- Trust Badge Section -->
+<div class="flex items-center gap-6 mt-12 pt-8 border-t border-slate-200/15 w-full">
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="portrait of professional architect looking confident in urban office environment with soft focus windows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkpKIg1spUMpceCV69B_udg08XUJ3JtDeKNrVd7sgDwKX5AFFYPFqI18uC_0_apI7pWyZy4DJ_IsBeQhIaRudPw2VvyPc5BJpuleRiFikNLZPw9iV5ct-AxjwrI7x-yEerVKEgMOoCtrjSNkQmOKj4IgG2BNIsBLPXA2tThHMen6WeZ_D4wiI7OTWUEJQqAiMRNvMuwNciNvG01lnbYzTzUytIMt66Il0REoKmF-VosFWbiAG2NmbM4pY3LisAIALVnXAcMVveNj0"/>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="close-up of smiling businesswoman in a professional modern setting with natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIK5EBFTsnXxUi9gkADA0IjTes6TdQS-lYaCYWXYTwD4_xBy8MhS2cum3KHBOyQVfauReRnFvzjHaKcM9plGZ2RZ7kRdtDJETetJMHaEzvlKlBwdjwVJRDFGXAoGjxp8MCaKU6WEBbwcXkIMTW-fWHlW5ug3GPVPG4SV_YXBude9xukrMqcfripp0su5teIMoYc9zGubp6CqJ6cPlqOESDtcPIE3kx7NgFMa6Vsh5pbxfCTUMOXjx2X3LIX1dCtElVeUw6IA0Nefg"/>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="headshot of young male professional with warm friendly expression against a clean grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkwBxy-iDhiNzLLtfIoKgPOcCC9SJagxGDIpDbF9G-8eNKs1L3Z_-FT5dAhdfpFdid9uD-xy7PmDkEkB9Kfgt-svj1FMiTnMLBAfWJq00sdCcterQZEBDmA71KwxJasMl6Cv1FmZpErVZOi_JisheFYYNiqo3I68Fie_WlPBBJigshGsYNMah5Sxd_2EFumoz7iyh-cbfjvZxWIyRKLYpdeomPJ3btifxSRS3-g6g_GPrcraMEcD6gXvgXvr4i-O7Td57MmMQlWvQ"/>
+</div>
+</div>
+<p class="text-sm text-slate-500 font-medium">
+                        Trusted by <span class="text-primary font-bold">12,000+</span> citizens and digital architects nationwide.
+                    </p>
+</div>
+</div>
+<!-- Right Visual Column (Guiding Light Icon) -->
+<div class="lg:col-span-5 relative flex justify-center items-center">
+<div class="relative w-80 h-80 md:w-[480px] md:h-[480px] flex items-center justify-center">
+<!-- Decorative Background Layers -->
+<div class="absolute inset-0 rounded-full bg-primary/5 border border-primary/10 animate-pulse"></div>
+<div class="absolute inset-12 rounded-full border border-primary/5"></div>
+<!-- The Lens Concept -->
+<div class="relative w-full h-full flex items-center justify-center">
+<!-- Outer Glass Layer -->
+<div class="absolute w-4/5 h-4/5 rounded-[48px] bg-primary-container/20 glass-panel border border-white/20 transform rotate-12"></div>
+<!-- Middle Glass Layer -->
+<div class="absolute w-3/4 h-3/4 rounded-[40px] bg-[#1A3A5C]/40 glass-panel border border-white/10 transform -rotate-6"></div>
+<!-- Core Lens Body -->
+<div class="relative w-1/2 h-1/2 rounded-full bg-primary-container shadow-2xl flex items-center justify-center overflow-hidden border border-white/10">
+<img class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay" data-alt="abstract artistic visualization of light refracting through structured geometric glass with deep navy and amber tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6-BikxX37J5nCfwmCzfc_gtLCqJGMpC2ny9wOccrOjWF7kuIbZbzhsnKy6xcdzcekMwjM9w1sX5bmQm5B1w7p5vcEDYAFiQAbr5xeYmYGA_pvp1Vur8MSxmWaTO25VZaOmnlKRw_v-RuB7b27eYRV4L-5mi_6puXZEiLWUiOM8ZweSj7B4JkGLQbCwAWe8o7PK_ZGLUdKmn-yUYhwrA0L-xxjuUULrPQMRlE59fue7wVzpVatZPnIXz48R1_Owm_4nF1AykNq3PM"/>
+<!-- The Amber Glow Center -->
+<div class="w-24 h-24 rounded-full bg-on-tertiary-container amber-glow flex items-center justify-center relative">
+<span class="material-symbols-outlined text-primary text-5xl font-variation-settings-'FILL'1" data-icon="lens">lens</span>
+<!-- Refraction sparkles -->
+<div class="absolute -top-2 -right-2 w-4 h-4 bg-white/60 blur-sm rounded-full"></div>
+<div class="absolute -bottom-4 -left-2 w-6 h-6 bg-white/40 blur-md rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Floating Data Chips (Architectural Elements) -->
+<div class="absolute -top-4 right-10 px-4 py-2 rounded-full bg-white shadow-xl flex items-center gap-2 border border-slate-100">
+<span class="material-symbols-outlined text-on-tertiary-container text-sm" data-icon="verified">verified</span>
+<span class="text-xs font-bold text-primary font-headline">IDENTITY VERIFIED</span>
+</div>
+<div class="absolute bottom-12 -left-4 px-4 py-3 rounded-xl bg-surface-container-lowest shadow-xl flex flex-col gap-1 border border-slate-100">
+<span class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Benefit Index</span>
+<div class="flex items-center gap-3">
+<div class="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-on-tertiary-container"></div>
+</div>
+<span class="text-sm font-bold text-primary">82%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Featured Section Divider -->
+<div class="w-full mt-24 mb-12 flex justify-center">
+<div class="w-px h-24 bg-gradient-to-b from-primary/20 to-transparent"></div>
+</div>
+<!-- Secondary Information / Feature Grid (Architectural Layout) -->
+<section class="w-full max-w-7xl mx-auto px-6 pb-24">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Feature 1 -->
+<div class="p-8 rounded-[32px] bg-surface-container-low hover:bg-surface-container-lowest transition-colors group">
+<div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-sm group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h3 class="text-xl font-bold text-primary font-headline mb-3">Intelligent Parsing</h3>
+<p class="text-slate-500 leading-relaxed">Our engine breaks down complex legal jargon into actionable steps for your everyday life.</p>
+</div>
+<!-- Feature 2 -->
+<div class="p-8 rounded-[32px] bg-surface-container-low hover:bg-surface-container-lowest transition-colors group border-2 border-transparent hover:border-on-tertiary-container/10">
+<div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-sm group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="gavel">gavel</span>
+</div>
+<h3 class="text-xl font-bold text-primary font-headline mb-3">Sovereign Compliance</h3>
+<p class="text-slate-500 leading-relaxed">Stay updated with changing regulations that impact your residency and tax profile automatically.</p>
+</div>
+<!-- Feature 3 -->
+<div class="p-8 rounded-[32px] bg-surface-container-low hover:bg-surface-container-lowest transition-colors group">
+<div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-sm group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-white" data-icon="shield_with_heart">shield_with_heart</span>
+</div>
+<h3 class="text-xl font-bold text-primary font-headline mb-3">Privacy First</h3>
+<p class="text-slate-500 leading-relaxed">Your data never leaves your secure lens. We prioritize anonymity in all civic interactions.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shell -->
+<footer class="w-full border-t border-slate-200/15 bg-[#faf9fc]">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-12 gap-6 max-w-7xl mx-auto font-['Public_Sans'] text-sm tracking-wide">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#1A3A5C]" data-icon="account_balance">account_balance</span>
+<span class="font-['Space_Grotesk'] font-bold text-[#1A3A5C] text-lg">CivicLens</span>
+</div>
+<p class="text-slate-400">© 2024 CivicLens. Built for the Digital Architect.</p>
+<div class="flex gap-8">
+<a class="text-slate-400 hover:text-[#1A3A5C] underline-offset-4 hover:underline transition-opacity" href="#">Privacy Policy</a>
+<a class="text-slate-400 hover:text-[#1A3A5C] underline-offset-4 hover:underline transition-opacity" href="#">Terms of Service</a>
+<a class="text-slate-400 hover:text-[#1A3A5C] underline-offset-4 hover:underline transition-opacity" href="#">Contact Support</a>
+</div>
+</div>
+</footer>
+</body></html>

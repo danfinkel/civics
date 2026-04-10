@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/prism_typography.dart';
 
 /// Hex prism step indicator — animated check when complete (Phase 2).
 class PrismSlotStep extends StatelessWidget {
@@ -43,10 +44,9 @@ class PrismSlotStep extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '$stepNumber',
-                    style: const TextStyle(
+                    style: PrismTypography.spaceGrotesk(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
                     ),
                   ),
                 ),

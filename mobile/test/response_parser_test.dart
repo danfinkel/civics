@@ -80,6 +80,60 @@ void main() {
       expect(result.data, isNull);
     });
 
+    test('should parse JSON when evidence contains } character', () {
+      const json = r'''
+{
+  "requirements": [
+    {
+      "requirement": "Proof of Age",
+      "status": "satisfied",
+      "matched_document": "Birth cert",
+      "evidence": "Closing brace in OCR: } still inside string",
+      "notes": "",
+      "confidence": "high"
+    }
+  ],
+  "duplicate_category_flag": false,
+  "duplicate_category_explanation": "",
+  "family_summary": "OK"
+}
+''';
+      final result = ResponseParser.parseTrackB(json);
+      expect(result.isSuccess, true);
+      expect(result.data!.requirements.first.evidence, contains('}'));
+    });
+
+    test('should parse JSON with trailing commas', () {
+      const json = '''
+{
+  "requirements": [],
+  "duplicate_category_flag": false,
+  "duplicate_category_explanation": "",
+  "family_summary": "Test",
+}
+''';
+      final result = ResponseParser.parseTrackB(json);
+      expect(result.isSuccess, true);
+      expect(result.data!.familySummary, 'Test');
+    });
+
+    test('should wrap root-level requirements array', () {
+      const json = '''
+[
+  {
+    "requirement": "Proof of Age",
+    "status": "satisfied",
+    "matched_document": "Doc 1",
+    "evidence": "ok"
+  }
+]
+''';
+      final result = ResponseParser.parseTrackB(json);
+      expect(result.isSuccess, true);
+      expect(result.data!.requirements.length, 1);
+      expect(result.data!.familySummary, '');
+    });
+
     test('should parse valid Track A JSON', () {
       const json = '''
 {

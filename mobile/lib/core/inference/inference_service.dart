@@ -252,10 +252,12 @@ class InferenceService {
           '\n'
           'Analyze what documents are present and whether they satisfy BPS requirements.\n'
           '\n'
-          'Respond with a JSON object containing:\n'
-          '- "requirements": array of objects each with "requirement", "status" (satisfied/questionable/missing), "matched_document", and "evidence"\n'
+          'Respond with ONLY valid JSON (no markdown fences, no text before or after). Use double quotes for all keys and strings.\n'
+          'JSON object shape:\n'
+          '- "requirements": array of objects, each with "requirement", "status" (satisfied|questionable|missing), "matched_document", "evidence", optional "notes", optional "confidence" (high|medium|low)\n'
           '- "duplicate_category_flag": boolean\n'
-          '- "family_summary": string summarizing readiness\n'
+          '- "duplicate_category_explanation": string (empty if not applicable)\n'
+          '- "family_summary": string summarizing what to bring\n'
           '<end_of_turn>\n'
           '<start_of_turn>model\n';
     }
