@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../../core/imaging/document_capture.dart';
 import '../../core/models/track_a_result.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../shared/theme/prism_tokens.dart';
 import '../../shared/theme/prism_typography.dart';
 import 'track_a_controller.dart';
-import '../track_b/widgets/confidence_badge.dart';
+import 'widgets/track_a_results_view.dart';
 
 class TrackAScreen extends StatefulWidget {
   const TrackAScreen({super.key});
@@ -17,6 +18,13 @@ class _TrackAScreenState extends State<TrackAScreen> {
   final TrackAController _controller = TrackAController();
   bool _isAnalyzing = false;
   TrackAResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Defer Llama load until "Check my documents" — avoids peak RAM with
+    // capture/OCR and fixes OOM when opening this screen then picking photos.
+  }
 
   @override
   void dispose() {
@@ -156,7 +164,13 @@ class _TrackAScreenState extends State<TrackAScreen> {
             ),
         ],
       ),
-      body: _result != null ? _buildResultsView() : _buildUploadView(),
+      body: _result != null
+          ? TrackAResultsView(
+              result: _result!,
+              onStartOver: _startOver,
+              onSaveSummary: () {},
+            )
+          : _buildUploadView(),
     );
   }
 
@@ -266,13 +280,14 @@ class _TrackAScreenState extends State<TrackAScreen> {
 
   Widget _buildNoticeUpload() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFC3C6CF).withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.08),
         ),
-        borderRadius: BorderRadius.circular(4),
+        boxShadow: PrismShadows.card(context),
       ),
       child: Column(
         children: [
@@ -301,7 +316,7 @@ class _TrackAScreenState extends State<TrackAScreen> {
               Expanded(
                 child: _ActionButton(
                   icon: Icons.camera_alt,
-                  label: 'Take Photo',
+                  label: 'Camera',
                   onTap: () async {
                     final capture = DocumentCapture();
                     final doc = await capture.captureFromCamera();
@@ -309,11 +324,11 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _ActionButton(
                   icon: Icons.photo_library,
-                  label: 'Choose from Library',
+                  label: 'Photo library',
                   onTap: () async {
                     final capture = DocumentCapture();
                     final doc = await capture.pickFromGallery();
@@ -392,13 +407,14 @@ class _TrackAScreenState extends State<TrackAScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFC3C6CF).withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.08),
         ),
-        borderRadius: BorderRadius.circular(4),
+        boxShadow: PrismShadows.card(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,244 +558,6 @@ class _TrackAScreenState extends State<TrackAScreen> {
     );
   }
 
-  Widget _buildResultsView() {
-    final result = _result!;
-
-    return Column(
-      children: [
-        // Deadline banner
-        if (!result.noticeSummary.isUncertain) ...[
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.lightAmber,
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today,
-                  color: Color(0xFF92400E),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Response Deadline',
-                        style: PrismTypography.publicSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF92400E),
-                        ),
-                      ),
-                      Text(
-                        result.noticeSummary.deadline,
-                        style: PrismTypography.spaceGrotesk(
-                          fontSize: 18,
-                          color: const Color(0xFF92400E),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        // Uncertainty warning
-        if (result.noticeSummary.isUncertain) ...[
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.lightRed,
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: AppColors.error,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Notice unclear — please contact DTA at (617) 348-8400',
-                    style: PrismTypography.publicSans(
-                      fontSize: 14,
-                      color: AppColors.error,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        // Proof pack
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                'Your Proof Pack',
-                style: PrismTypography.spaceGrotesk(fontSize: 20),
-              ),
-              const SizedBox(height: 16),
-              ...result.proofPack.map((item) => _buildProofPackItem(item)),
-              const SizedBox(height: 24),
-              // Action summary
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.lightBlue,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'What to do next',
-                      style: PrismTypography.spaceGrotesk(fontSize: 20),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      result.actionSummary,
-                      style: PrismTypography.publicSans(
-                        fontSize: 16,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Bottom actions
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _startOver,
-                  child: const Text('Start Over'),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('Save Summary'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProofPackItem(ProofPackItem item) {
-    final (statusColor, statusBg, statusText) = _getAssessmentStyles(item.assessment);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        border: Border.all(
-          color: const Color(0xFFC3C6CF).withOpacity(0.2),
-        ),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  item.category,
-                  style: PrismTypography.spaceGrotesk(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  statusText,
-                  style: PrismTypography.publicSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: statusColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            item.isMissing ? 'MISSING' : item.matchedDocument,
-            style: PrismTypography.publicSans(
-              fontSize: 14,
-              color: item.isMissing ? AppColors.error : AppColors.neutral,
-            ),
-          ),
-          if (item.evidence.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              item.evidence,
-              style: PrismTypography.publicSans(
-                fontSize: 12,
-                color: AppColors.neutral,
-              ).copyWith(fontStyle: FontStyle.italic),
-            ),
-          ],
-          if (item.caveats.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.lightAmber,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                item.caveats,
-                style: PrismTypography.publicSans(
-                  fontSize: 12,
-                  color: const Color(0xFF92400E),
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 8),
-          ConfidenceBadge(level: item.confidence),
-        ],
-      ),
-    );
-  }
-
-  (Color, Color, String) _getAssessmentStyles(AssessmentLabel assessment) {
-    switch (assessment) {
-      case AssessmentLabel.likelySatisfies:
-        return (AppColors.success, AppColors.lightGreen, 'Likely satisfies');
-      case AssessmentLabel.likelyDoesNotSatisfy:
-        return (
-          const Color(0xFF92400E),
-          AppColors.lightAmber,
-          'Does not satisfy'
-        );
-      case AssessmentLabel.missing:
-        return (AppColors.error, AppColors.lightRed, 'Missing');
-      case AssessmentLabel.uncertain:
-        return (AppColors.neutral, AppColors.surfaceContainerLow, 'Uncertain');
-    }
-  }
 }
 
 class _ActionButton extends StatelessWidget {
@@ -807,13 +585,19 @@ class _ActionButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 18, color: AppColors.primary),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: PrismTypography.publicSans(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.primary,
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: PrismTypography.publicSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                  height: 1.15,
+                ),
               ),
             ),
           ],

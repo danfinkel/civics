@@ -3,6 +3,8 @@ import '../../../core/models/track_b_result.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/theme/prism_tokens.dart';
 import '../../../shared/theme/prism_typography.dart';
+import '../../../core/utils/eval_mode.dart';
+import '../../../core/utils/label_formatter.dart';
 import '../../../shared/widgets/prism/crystal_status_badge.dart';
 import 'confidence_badge.dart';
 
@@ -16,13 +18,15 @@ class RequirementRow extends StatelessWidget {
 
   String _subtitle() {
     if (requirement.matchedDocument == 'MISSING') {
-      return 'No document provided';
+      return LabelFormatter.assessmentLabel('missing');
     }
-    final ev = requirement.evidence.trim();
-    if (ev.isNotEmpty) {
-      final oneLine = ev.split(RegExp(r'\s+')).join(' ');
-      if (oneLine.length <= 100) return oneLine;
-      return '${oneLine.substring(0, 100).trim()}…';
+    if (kEvalMode) {
+      final ev = requirement.evidence.trim();
+      if (ev.isNotEmpty) {
+        final oneLine = ev.split(RegExp(r'\s+')).join(' ');
+        if (oneLine.length <= 100) return oneLine;
+        return '${oneLine.substring(0, 100).trim()}…';
+      }
     }
     return requirement.matchedDocument;
   }
@@ -54,7 +58,9 @@ class RequirementRow extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            requirement.requirement,
+                            LabelFormatter.requirementLabel(
+                              requirement.requirement,
+                            ),
                             style: PrismTypography.spaceGrotesk(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -82,7 +88,7 @@ class RequirementRow extends StatelessWidget {
                         height: 1.35,
                       ),
                     ),
-                    if (requirement.notes.isNotEmpty) ...[
+                    if (kEvalMode && requirement.notes.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(
                         requirement.notes,
@@ -91,8 +97,10 @@ class RequirementRow extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 10),
-                    ConfidenceBadge(level: requirement.confidence),
+                    if (kEvalMode) ...[
+                      const SizedBox(height: 10),
+                      ConfidenceBadge(level: requirement.confidence),
+                    ],
                   ],
                 ),
               ),
@@ -104,24 +112,26 @@ class RequirementRow extends StatelessWidget {
   }
 
   (Color, Color, String) _getStatusStyles() {
+    final label =
+        LabelFormatter.requirementStatusLabel(requirement.status.name);
     switch (requirement.status) {
       case RequirementStatus.satisfied:
         return (
           AppColors.success,
           AppColors.lightGreen,
-          'Satisfied',
+          label,
         );
       case RequirementStatus.questionable:
         return (
           const Color(0xFF92400E),
           AppColors.lightAmber,
-          'Questionable',
+          label,
         );
       case RequirementStatus.missing:
         return (
           AppColors.neutral,
           AppColors.surfaceContainerLow,
-          'Missing',
+          label,
         );
     }
   }
@@ -192,7 +202,7 @@ class _SatisfiedChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        'SATISFIED',
+        'MET',
         style: PrismTypography.publicSans(
           fontSize: 10,
           fontWeight: FontWeight.w800,

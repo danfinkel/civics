@@ -10,6 +10,7 @@
 import 'dart:convert';
 import '../models/track_a_result.dart';
 import '../models/track_b_result.dart';
+import '../utils/label_formatter.dart';
 
 /// Result of parsing a response
 class ParseResult<T> {
@@ -66,7 +67,9 @@ class ResponseParser {
   ///
   /// Returns a [ParseResult] containing [TrackAResult] or error info
   static ParseResult<TrackAResult> parseTrackA(String raw) {
-    final jsonResult = _parseWithRetry(raw);
+    final trimmed = raw.trim();
+    final jsonResult =
+        _parseWithRetry(_repairTrackAGemmaJson(trimmed)) ?? _parseWithRetry(trimmed);
 
     if (jsonResult == null) {
       return ParseResult.failure(
@@ -76,7 +79,14 @@ class ResponseParser {
     }
 
     try {
-      final result = TrackAResult.fromJson(jsonResult);
+      var result = TrackAResult.fromJson(jsonResult);
+      if (result.actionSummary.trim().isEmpty) {
+        result = TrackAResult(
+          noticeSummary: result.noticeSummary,
+          proofPack: result.proofPack,
+          actionSummary: LabelFormatter.synthesizeTrackAActionSummary(result),
+        );
+      }
       return ParseResult.success(result, raw, 'track_a');
     } catch (e) {
       return ParseResult.failure(
@@ -110,16 +120,53 @@ class ResponseParser {
     }
   }
 
+  /// Gemma on-device sometimes emits invalid JSON: after a period inside
+  /// `caveats` it may output `."","}` instead of `.}"}` before `],"`.
+  static String _repairTrackAGemmaJson(String s) {
+    var o = s.trim();
+    // `...caveats":"...sentence.","}],"` → `...sentence."}],"`
+    o = o.replaceAll(RegExp(r'\.","\}'), '.}"}');
+    // Gemma: extra `"` before a key — `],""deadline"` → `],"deadline"`
+    o = o.replaceAllMapped(
+      RegExp(r',\s*""(\w+)"'),
+      (m) => ',"${m[1]}"',
+    );
+    o = o.replaceAll('"deadline":"[Not specified"', '"deadline":"UNCERTAIN"');
+    o = o.replaceAll('"deadline":"[Not specified]"', '"deadline":"UNCERTAIN"');
+    o = o.replaceAll('"consequence":"[Not specified]"', '"consequence":"UNCERTAIN"');
+    o = o.replaceAll('"consequence":"[Not specified"', '"consequence":"UNCERTAIN"');
+    // Prose after closing `}`: `}\naction_summary:...` → valid JSON field
+    final asTail = RegExp(
+      r'\}\s*\r?\n\s*action_summary\s*:',
+      caseSensitive: false,
+    );
+    final tailMatches = asTail.allMatches(o).toList();
+    if (tailMatches.isNotEmpty) {
+      final m = tailMatches.last;
+      final prefix = o.substring(0, m.start);
+      final prose = o.substring(m.end).trim();
+      if (prose.isNotEmpty) {
+        o = '$prefix,"action_summary":${jsonEncode(prose)}}';
+      }
+    }
+    return o;
+  }
+
   /// Try multiple parsing strategies (direct, fences, balanced brace/array,
   /// trailing-comma repair, root-level requirements array).
   static Map<String, dynamic>? _parseWithRetry(String raw) {
     final trimmed = raw.trim().replaceFirst(RegExp(r'^\uFEFF'), '');
     final fromMarkdown = _extractJsonFromMarkdown(raw);
-    final bases = <String>[
+    final openFence = _extractOpenMarkdownFence(trimmed);
+    final bases = <String>{
       trimmed,
       _stripMarkdownFences(trimmed),
       if (fromMarkdown != null) fromMarkdown,
-    ];
+      if (openFence != null && openFence.isNotEmpty) openFence,
+      _escapeNewlinesInsideJsonStrings(trimmed),
+      if (openFence != null && openFence.isNotEmpty)
+        _escapeNewlinesInsideJsonStrings(openFence),
+    }.where((s) => s.trim().isNotEmpty).toList();
 
     for (final b in bases) {
       final t = b.trim();
@@ -137,9 +184,11 @@ class ResponseParser {
       }
 
       // 3. Balanced object / array slices (prose + JSON, or truncated output)
-      final obj = _extractBalancedJsonObject(t);
+      var obj = _extractBalancedJsonObject(t);
       if (obj != null) {
         map = _decodeToObjectMap(obj);
+        if (map != null) return map;
+        map = _decodeToObjectMap(_escapeNewlinesInsideJsonStrings(obj));
         if (map != null) return map;
       }
       final arr = _extractBalancedJsonArray(t);
@@ -149,7 +198,189 @@ class ResponseParser {
       }
     }
 
+    // 4. Truncated / sloppy output: try slices ending at each `}` (prose after JSON).
+    for (final b in bases) {
+      final t = b.trim();
+      if (t.isEmpty) continue;
+      final map = _decodeByScanningClosingBraces(t);
+      if (map != null) return map;
+    }
+
+    // 5. Unterminated object/array: close strings + brackets (llm hit token limit).
+    for (final b in bases) {
+      final t = b.trim();
+      if (t.isEmpty) continue;
+      final closed = _autoCloseTruncatedJson(t);
+      if (closed != null) {
+        var map = _decodeToObjectMap(closed);
+        map ??= _decodeToObjectMap(_removeTrailingCommas(closed));
+        map ??= _decodeToObjectMap(
+          _removeTrailingCommas(_escapeNewlinesInsideJsonStrings(closed)),
+        );
+        if (map != null) return map;
+      }
+    }
+
+    // 6. Model echoed preamble before JSON: try every `{` as object start.
+    for (final b in bases) {
+      final map = _decodeByTryingEachObjectStart(b);
+      if (map != null) return map;
+    }
+
     return null;
+  }
+
+  /// Opening ```json … without closing ``` (common when output is truncated).
+  static String? _extractOpenMarkdownFence(String text) {
+    final m = RegExp(
+      r'```(?:json)?\s*',
+      caseSensitive: false,
+    ).firstMatch(text);
+    if (m == null) return null;
+    final rest = text.substring(m.end).trim();
+    if (rest.isEmpty) return null;
+    return rest;
+  }
+
+  /// LLMs often emit raw line breaks inside "evidence" / summaries — invalid JSON.
+  static String _escapeNewlinesInsideJsonStrings(String s) {
+    final buf = StringBuffer();
+    var inString = false;
+    var escape = false;
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      if (escape) {
+        buf.write(ch);
+        escape = false;
+        continue;
+      }
+      if (inString) {
+        if (ch == r'\') {
+          buf.write(ch);
+          escape = true;
+        } else if (ch == '"') {
+          buf.write(ch);
+          inString = false;
+        } else if (ch == '\n') {
+          buf.write(r'\n');
+        } else if (ch == '\r') {
+          buf.write(r'\n');
+          if (i + 1 < s.length && s[i + 1] == '\n') {
+            i++;
+          }
+        } else {
+          buf.write(ch);
+        }
+        continue;
+      }
+      if (ch == '"') {
+        inString = true;
+      }
+      buf.write(ch);
+    }
+    return buf.toString();
+  }
+
+  /// Walk each `{` and attempt balanced-object extraction + decode.
+  static Map<String, dynamic>? _decodeByTryingEachObjectStart(String text) {
+    var searchStart = 0;
+    Map<String, dynamic>? fallback;
+    while (true) {
+      final idx = text.indexOf('{', searchStart);
+      if (idx < 0) return fallback;
+      final obj = _extractBalancedJsonObject(text, startIndex: idx);
+      if (obj != null) {
+        var map = _decodeToObjectMap(obj);
+        map ??= _decodeToObjectMap(_escapeNewlinesInsideJsonStrings(obj));
+        if (map != null) {
+          if (_looksLikeTrackAOrBPayload(map)) return map;
+          fallback ??= map;
+        }
+        final closed = _autoCloseTruncatedJson(text.substring(idx));
+        if (closed != null) {
+          map = _decodeToObjectMap(closed);
+          map ??= _decodeToObjectMap(
+            _removeTrailingCommas(_escapeNewlinesInsideJsonStrings(closed)),
+          );
+          if (map != null) {
+            if (_looksLikeTrackAOrBPayload(map)) return map;
+            fallback ??= map;
+          }
+        }
+      }
+      searchStart = idx + 1;
+    }
+  }
+
+  static bool _looksLikeTrackAOrBPayload(Map<String, dynamic> m) {
+    return m.containsKey('proof_pack') ||
+        m.containsKey('notice_summary') ||
+        m.containsKey('requirements') ||
+        m.containsKey('family_summary');
+  }
+
+  /// Try substrings from first `{` to each `}` from the end (inner `}` first breaks decode).
+  static Map<String, dynamic>? _decodeByScanningClosingBraces(String text) {
+    final start = text.indexOf('{');
+    if (start < 0) return null;
+    var end = text.lastIndexOf('}');
+    while (end > start) {
+      final slice = text.substring(start, end + 1);
+      final map = _decodeToObjectMap(slice);
+      if (map != null) return map;
+      end = text.lastIndexOf('}', end - 1);
+    }
+    return null;
+  }
+
+  /// Append `"` if inside a string, then `]` / `}` to empty the bracket stack.
+  static String? _autoCloseTruncatedJson(String text) {
+    final start = text.indexOf('{');
+    if (start < 0) return null;
+    var s = text.substring(start);
+    final stack = <String>[];
+    var inString = false;
+    var escape = false;
+
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (inString) {
+        if (ch == r'\') {
+          escape = true;
+        } else if (ch == '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch == '"') {
+        inString = true;
+        continue;
+      }
+      if (ch == '{') {
+        stack.add('}');
+      } else if (ch == '[') {
+        stack.add(']');
+      } else if (ch == '}') {
+        if (stack.isNotEmpty && stack.last == '}') {
+          stack.removeLast();
+        }
+      } else if (ch == ']') {
+        if (stack.isNotEmpty && stack.last == ']') {
+          stack.removeLast();
+        }
+      }
+    }
+
+    if (inString) {
+      s = '$s"';
+    }
+    if (stack.isEmpty) return s;
+    final tail = stack.reversed.join();
+    return s + tail;
   }
 
   /// Decode JSON to a map Track B / Track A can consume (object or requirements-only array).
@@ -161,7 +392,13 @@ class ResponseParser {
       try {
         decoded = json.decode(_removeTrailingCommas(s));
       } catch (_) {
-        return null;
+        try {
+          decoded = json.decode(
+            _removeTrailingCommas(_escapeNewlinesInsideJsonStrings(s)),
+          );
+        } catch (_) {
+          return null;
+        }
       }
     }
     if (decoded is Map) {
@@ -207,9 +444,12 @@ class ResponseParser {
   }
 
   /// First `{` … matching `}` with string/escape awareness (fixes `}` inside evidence strings).
-  static String? _extractBalancedJsonObject(String text) {
-    final start = text.indexOf('{');
-    if (start == -1) return null;
+  static String? _extractBalancedJsonObject(
+    String text, {
+    int startIndex = -1,
+  }) {
+    final start = startIndex >= 0 ? startIndex : text.indexOf('{');
+    if (start == -1 || start >= text.length) return null;
     var depth = 0;
     var inString = false;
     var escape = false;

@@ -31,13 +31,32 @@ class BlurDetector {
     return analyzeBytes(bytes);
   }
 
+  /// Max edge for blur analysis — full-res Laplacian on 2048² allocates multiple
+  /// huge bitmaps and OOMs on phones before resize runs in [ImageProcessor].
+  static const int _blurAnalysisMaxEdge = 720;
+
   /// Analyzes image bytes for blur
+  ///
+  /// Applies the same EXIF orientation as [ImageProcessor.processBytes] so
+  /// portrait phone photos of full-page notices are scored on upright pixels.
+  /// Without this, notice captures often looked "sharp" to Laplacian while
+  /// supporting-doc shots (already upright) still triggered blur warnings.
   BlurResult analyzeBytes(Uint8List bytes) {
     final image = img.decodeImage(bytes);
     if (image == null) {
       throw ArgumentError('Could not decode image');
     }
-    return analyzeImage(image);
+    final oriented = img.bakeOrientation(image);
+    var work = oriented;
+    if (work.width > _blurAnalysisMaxEdge ||
+        work.height > _blurAnalysisMaxEdge) {
+      work = img.copyResize(
+        work,
+        width: work.width > work.height ? _blurAnalysisMaxEdge : null,
+        height: work.height >= work.width ? _blurAnalysisMaxEdge : null,
+      );
+    }
+    return analyzeImage(work);
   }
 
   /// Analyzes a decoded image for blur using Laplacian variance

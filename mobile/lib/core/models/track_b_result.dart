@@ -1,5 +1,7 @@
 /// Result models for Track B (School Enrollment)
 
+import '../utils/eval_mode.dart';
+import '../utils/label_formatter.dart';
 import 'track_a_result.dart';
 
 enum RequirementStatus { satisfied, questionable, missing }
@@ -116,21 +118,26 @@ class TrackBResult {
       ..writeln();
 
     for (final r in requirements) {
-      final status = switch (r.status) {
-        RequirementStatus.satisfied => 'Satisfied',
-        RequirementStatus.questionable => 'Questionable',
-        RequirementStatus.missing => 'Missing',
-      };
-      b.writeln('• ${r.requirement}: $status');
-      b.writeln('  Matched: ${r.matchedDocument}');
-      if (r.evidence.isNotEmpty) {
-        b.writeln('  Evidence: ${r.evidence}');
+      final status = LabelFormatter.requirementStatusLabel(r.status.name);
+      final name = LabelFormatter.requirementLabel(r.requirement);
+      b.writeln('• $name: $status');
+      if (kEvalMode) {
+        b.writeln('  Matched: ${r.matchedDocument}');
+        if (r.evidence.isNotEmpty) {
+          b.writeln('  Evidence: ${r.evidence}');
+        }
       }
       b.writeln();
     }
 
     if (duplicateCategoryFlag) {
-      b.writeln('Note: ${duplicateCategoryExplanation.isNotEmpty ? duplicateCategoryExplanation : 'Possible duplicate document categories.'}');
+      final dup = LabelFormatter.duplicateCategoryUserMessage(
+        duplicateCategoryExplanation,
+      );
+      final note = dup.isNotEmpty
+          ? dup
+          : 'Possible duplicate document categories.';
+      b.writeln('Note: $note');
       b.writeln();
     }
 

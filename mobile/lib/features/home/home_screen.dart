@@ -12,6 +12,8 @@ import '../../shared/theme/prism_tokens.dart';
 import 'widgets/prism_landing_lens.dart';
 
 const Color _landingAccentAmber = Color(0xFFC49B5F);
+/// Matches splash wordmark icon (`CivicLensSplashScreen`).
+const Color _brandIconAmber = Color(0xFFECBF80);
 
 /// Stitch-style landing (hero, lens, capabilities, transparency) + service tiles.
 class HomeScreen extends StatefulWidget {
@@ -23,7 +25,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scroll = ScrollController();
-  final GlobalKey _capabilitiesKey = GlobalKey();
   final GlobalKey _transparencyKey = GlobalKey();
   final GlobalKey _servicesKey = GlobalKey();
 
@@ -66,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _LandingTopBar(
             wide: wide,
-            onCapabilities: () => _ensureVisible(_capabilitiesKey),
+            onServices: () => _ensureVisible(_servicesKey),
             onTransparency: () => _openTransparency(context),
             onTryDemo: () => _ensureVisible(_servicesKey),
             onLongPressBrand: () => _showTestMenu(context),
@@ -101,13 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 20),
                         _TrustLine(theme: theme),
-                        const SizedBox(height: 28),
-                        const _VerticalDividerDecor(),
-                        const SizedBox(height: 24),
-                        KeyedSubtree(
-                          key: _capabilitiesKey,
-                          child: const _CapabilityGrid(),
-                        ),
                         const SizedBox(height: 28),
                         KeyedSubtree(
                           key: _transparencyKey,
@@ -165,14 +159,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _LandingTopBar extends StatelessWidget {
   final bool wide;
-  final VoidCallback onCapabilities;
+  final VoidCallback onServices;
   final VoidCallback onTransparency;
   final VoidCallback onTryDemo;
   final VoidCallback onLongPressBrand;
 
   const _LandingTopBar({
     required this.wide,
-    required this.onCapabilities,
+    required this.onServices,
     required this.onTransparency,
     required this.onTryDemo,
     required this.onLongPressBrand,
@@ -207,9 +201,9 @@ class _LandingTopBar extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.account_balance_rounded,
-                          color: AppColors.primaryContainer,
+                          color: _brandIconAmber,
                           size: 24,
                         ),
                         const SizedBox(width: 6),
@@ -229,9 +223,9 @@ class _LandingTopBar extends StatelessWidget {
                 const Spacer(),
                 if (wide) ...[
                   TextButton(
-                    onPressed: onCapabilities,
+                    onPressed: onServices,
                     child: Text(
-                      'Capabilities',
+                      'Services',
                       style: GoogleFonts.spaceGrotesk(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -266,11 +260,11 @@ class _LandingTopBar extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               ListTile(
-                                leading: const Icon(Icons.grid_view_rounded),
-                                title: const Text('Capabilities'),
+                                leading: const Icon(Icons.apps_rounded),
+                                title: const Text('Services'),
                                 onTap: () {
                                   Navigator.pop(ctx);
-                                  onCapabilities();
+                                  onServices();
                                 },
                               ),
                               ListTile(
@@ -394,9 +388,9 @@ class _HeroCopy extends StatelessWidget {
           TextSpan(
             style: headlineStyle,
             children: [
-              const TextSpan(text: 'Prepare Massachusetts civic documents with '),
+              const TextSpan(text: 'Prepare government paperwork with '),
               TextSpan(
-                text: 'clarity.',
+                text: 'privacy first.',
                 style: headlineStyle.copyWith(color: _landingAccentAmber),
               ),
             ],
@@ -405,9 +399,11 @@ class _HeroCopy extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          'CivicLens helps with DTA SNAP notices and Boston Public Schools '
-          'registration. Upload photos, get a plain-language checklist, and see '
-          'confidence cues—not a decision from DTA or BPS.',
+          'CivicLens helps you understand letters and forms from public programs. '
+          'When you use on-device review, your document photos stay on this phone—'
+          'nothing is sent to the cloud for that step. You get a plain-language '
+          'checklist and confidence cues; official decisions still come from the '
+          'agency.',
           textAlign: textAlign,
           style: theme.bodyLarge?.copyWith(
             color: AppColors.neutral,
@@ -519,142 +515,12 @@ class _TrustLine extends StatelessWidget {
           ),
           TextSpan(
             text:
-                'documents stay on this phone when you use local inference. Always confirm requirements with DTA or BPS staff.',
+                'documents stay on this phone when you use on-device analysis. '
+                'Always confirm final requirements with the office handling your case.',
             style: theme.bodySmall?.copyWith(
               color: AppColors.neutral,
               height: 1.45,
               fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VerticalDividerDecor extends StatelessWidget {
-  const _VerticalDividerDecor();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 1,
-        height: 72,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withValues(alpha: 0.22),
-              AppColors.primary.withValues(alpha: 0),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CapabilityGrid extends StatelessWidget {
-  const _CapabilityGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    final cards = [
-      _LandingFeatureCard(
-        icon: Icons.document_scanner_rounded,
-        title: 'Uploads & OCR',
-        body:
-            'PDFs and images. Text is extracted so the model can match your uploads to the checklist.',
-      ),
-      _LandingFeatureCard(
-        icon: Icons.assignment_rounded,
-        title: 'SNAP & enrollment',
-        body:
-            'Track A: DTA notices and proof categories. Track B: BPS packet (age, two residency types, immunizations, optional grade).',
-      ),
-      _LandingFeatureCard(
-        icon: Icons.shield_outlined,
-        title: 'Privacy-aware',
-        body:
-            'Designed for on-device analysis. You control what you photograph and clear slots anytime.',
-      ),
-    ];
-    if (w >= 720) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var i = 0; i < cards.length; i++) ...[
-            if (i > 0) const SizedBox(width: 12),
-            Expanded(child: cards[i]),
-          ],
-        ],
-      );
-    }
-    return Column(
-      children: [
-        for (var i = 0; i < cards.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          cards[i],
-        ],
-      ],
-    );
-  }
-}
-
-class _LandingFeatureCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String body;
-
-  const _LandingFeatureCard({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.06),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: PrismShadows.card(context),
-            ),
-            child: Icon(icon, size: 26, color: AppColors.primary),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: GoogleFonts.spaceGrotesk(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            style: GoogleFonts.publicSans(
-              fontSize: 14,
-              height: 1.5,
-              color: AppColors.neutral,
             ),
           ),
         ],

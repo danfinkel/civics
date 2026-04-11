@@ -20,14 +20,47 @@ class NoticeSummary {
     required this.consequence,
   });
 
+  /// True only when the model explicitly abstains ([UNCERTAIN]). Empty deadline
+  /// means "not extracted" — show proof pack without the red unclear banner.
   bool get isUncertain => deadline == 'UNCERTAIN';
 
   factory NoticeSummary.fromJson(Map<String, dynamic> json) {
     return NoticeSummary(
       requestedCategories: List<String>.from(json['requested_categories'] ?? []),
-      deadline: json['deadline'] ?? 'UNCERTAIN',
-      consequence: json['consequence'] ?? '',
+      deadline: _normalizeNoticeDeadline(json['deadline']),
+      consequence: _normalizeNoticeConsequence(json['consequence']),
     );
+  }
+
+  /// Placeholders → UNCERTAIN; null/empty → "" (partial notice read, no banner).
+  static String _normalizeNoticeDeadline(Object? v) {
+    if (v == null) return '';
+    final s = v.toString().trim();
+    if (s.isEmpty) return '';
+    final lower = s.toLowerCase();
+    if (lower == 'uncertain' ||
+        lower.contains('not specified') ||
+        lower == 'n/a' ||
+        lower == 'tbd' ||
+        lower == 'unknown') {
+      return 'UNCERTAIN';
+    }
+    return s;
+  }
+
+  static String _normalizeNoticeConsequence(Object? v) {
+    if (v == null) return '';
+    final s = v.toString().trim();
+    final lower = s.toLowerCase();
+    if (lower == 'unreadable' ||
+        lower == 'uncertain' ||
+        lower.contains('not specified') ||
+        lower == 'n/a' ||
+        lower == 'tbd' ||
+        lower == 'unknown') {
+      return '';
+    }
+    return s;
   }
 }
 
@@ -103,9 +136,28 @@ class TrackAResult {
     return TrackAResult(
       noticeSummary: NoticeSummary.fromJson(json['notice_summary'] ?? {}),
       proofPack: (json['proof_pack'] as List? ?? [])
-          .map((item) => ProofPackItem.fromJson(item))
+          .whereType<Map>()
+          .map((item) => ProofPackItem.fromJson(Map<String, dynamic>.from(item)))
           .toList(),
-      actionSummary: json['action_summary'] ?? '',
+      actionSummary: _firstNonEmptyString(json, const [
+        'action_summary',
+        'actionSummary',
+        'next_steps',
+        'what_to_do_next',
+        'summary',
+        'resident_summary',
+      ]),
     );
+  }
+
+  static String _firstNonEmptyString(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final k in keys) {
+      final v = json[k];
+      if (v is String && v.trim().isNotEmpty) return v.trim();
+    }
+    return '';
   }
 }

@@ -52,6 +52,43 @@ class PromptTemplates {
         "If the notice image is blurry or you cannot clearly read the text, set notice_summary fields to UNCERTAIN - do not guess.";
   }
 
+  /// Shorter Track A prompt for OCR-only pipeline (keeps prompt under llama nBatch).
+  static String trackAOcrOnly({required List<String> documentLabels}) {
+    final list = documentLabels
+        .asMap()
+        .entries
+        .map((e) => '${e.key + 1}. ${e.value}')
+        .join('\n');
+
+    return 'You help a resident with a government benefit notice and proof '
+        'documents (e.g. SNAP verification). Only OCR text is below; it may '
+        'contain errors.\n\n'
+        'Supporting docs (labels):\n$list\n\n'
+        'Steps: (1) Read the notice — requested proof categories, deadline, '
+        'consequence. (2) Map each document to a category; use likely_satisfies / '
+        'likely_does_not_satisfy / missing / uncertain. (3) Return ONLY valid JSON '
+        '(no markdown).\n\n'
+        '{"notice_summary":{"requested_categories":[],"deadline":"","consequence":""},'
+        '"proof_pack":[{"category":"","matched_document":"[name or MISSING]",'
+        '"assessment":"likely_satisfies|likely_does_not_satisfy|missing|uncertain",'
+        '"confidence":"high|medium|low","evidence":"","caveats":""}],'
+        '"action_summary":""}\n\n'
+        'The action_summary string in that JSON: 2–4 sentences, concrete next steps. '
+        'Never put action_summary outside the braces — no line like action_summary: '
+        'after the final }.\n\n'
+        'Never imply the agency accepted documents. If the notice is unreadable, '
+        'use UNCERTAIN in notice fields; do not guess.\n\n'
+        'Reply with only the JSON object. No markdown fences, no commentary before '
+        'or after. Escape any line breaks inside string values as \\n.\n'
+        'Use real deadline text from the notice when present; if truly missing, use '
+        'empty string "" for deadline and consequence — never bracket placeholders '
+        'like [Not specified].\n'
+        'Deadline: in the Government notice OCR, copy any response due date / '
+        '"submit by" / "return by" line verbatim into deadline; leave "" only if '
+        'no date appears there. Do not set consequence to "unreadable" unless the '
+        'notice body is illegible — if unclear, use "".';
+  }
+
   /// Track B: BPS Enrollment Packet Checker
   static String trackB({required List<String> documentLabels}) {
     final documentList = documentLabels

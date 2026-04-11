@@ -1,13 +1,10 @@
 import 'dart:typed_data';
 import '../../core/imaging/document_capture.dart';
-import '../../core/inference/gemma_client.dart';
-import '../../core/inference/prompt_templates.dart';
-import '../../core/inference/response_parser.dart';
-import '../../core/models/track_a_result.dart';
+import '../../core/inference/inference.dart';
 
 /// Controller for Track A (SNAP Benefits) flow
 class TrackAController {
-  final GemmaClient _gemmaClient = GemmaClient();
+  final InferenceService _service = InferenceService();
 
   // The government notice
   CapturedDocument? notice;
@@ -52,51 +49,50 @@ class TrackAController {
     }
   }
 
-  /// Analyze documents using Gemma 4
+  /// Load model + OCR stack (same path as Track B).
+  Future<bool> initializeService() async {
+    return _service.initialize(preferCloud: true);
+  }
+
+  /// Analyze documents using on-device OCR + llama.cpp (via [InferenceService]).
   Future<TrackAResult> analyzeDocuments() async {
     if (notice == null) {
       throw Exception('Government notice is required');
     }
 
-    // Build document labels for prompt
-    final documentLabels = <String>[];
-    final images = <Uint8List>[];
-
-    // Notice is always first
-    images.add(notice!.imageBytes);
-
-    // Add supporting documents
-    for (int i = 0; i < supportingDocuments.length; i++) {
-      final doc = supportingDocuments[i];
-      if (doc != null) {
-        documentLabels.add('Document ${i + 1}');
-        images.add(doc.imageBytes);
+    if (!_service.isReady) {
+      final ok = await initializeService();
+      if (!ok) {
+        throw Exception(
+          _service.lastError ?? 'Could not start document review on this device',
+        );
       }
     }
 
-    // Generate prompt
-    final prompt = PromptTemplates.trackA(documentLabels: documentLabels);
+    final images = <Uint8List>[notice!.imageBytes];
+    final supportingLabels = <String>[];
 
-    // Run inference
-    final response = await _gemmaClient.chat(
-      prompt: prompt,
-      images: images,
-    );
-
-    if (!response.isSuccess) {
-      throw Exception(response.errorMessage ?? 'Inference failed');
+    for (int i = 0; i < supportingDocuments.length; i++) {
+      final doc = supportingDocuments[i];
+      if (doc != null) {
+        images.add(doc.imageBytes);
+        supportingLabels.add('Document ${i + 1}');
+      }
     }
 
-    // Parse response
-    final result = ResponseParser.parseTrackA(response.rawText);
+    final result = await _service.analyzeTrackAWithOcr(
+      documents: images,
+      supportingDocumentLabels: supportingLabels,
+    );
+
     if (!result.isSuccess || result.data == null) {
-      throw Exception(result.errorMessage ?? 'Could not parse response');
+      throw Exception(result.errorMessage ?? 'Analysis failed');
     }
 
     return result.data!;
   }
 
   void dispose() {
-    _gemmaClient.dispose();
+    _service.dispose();
   }
 }

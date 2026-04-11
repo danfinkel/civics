@@ -33,6 +33,10 @@ dependencies:
   # Google ML Kit for on-device OCR
   google_mlkit_text_recognition: ^0.13.0
 
+  # Eval server (EVAL_MODE only; drives Monte Carlo harness from Mac)
+  shelf: ^1.4.1
+  shelf_router: ^1.1.4
+
   # System share sheet (packet summary)
   share_plus: ^10.1.4
 

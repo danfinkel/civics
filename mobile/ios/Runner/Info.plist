@@ -24,6 +24,28 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Required with FlutterImplicitEngineDelegate + SceneDelegate (Flutter UIScene migration). -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -53,6 +75,15 @@
 	<!-- Additional privacy descriptions -->
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>CivicLens can save document photos to your library if you choose.</string>
+
+	<!-- Flutter: VM service / flutter attach (mDNS on local network) -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>CivicLens uses your local network so a Mac on the same Wi‑Fi can attach the Flutter debugger during development (hot reload). Your documents are not sent over the network for this.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartVmService._tcp</string>
+		<string>_dartobservatory._tcp</string>
+	</array>
 
 	<!-- Disable non-exempt encryption for App Store -->
 	<key>ITSAppUsesNonExemptEncryption</key>

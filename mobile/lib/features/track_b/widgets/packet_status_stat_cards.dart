@@ -3,6 +3,7 @@ import '../../../core/models/track_a_result.dart';
 import '../../../core/models/track_b_result.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/theme/prism_tokens.dart';
+import '../../../core/utils/eval_mode.dart';
 
 /// Stitch-style stat row: compliance (from model output) + last analysis time.
 class PacketStatusStatCards extends StatelessWidget {
@@ -33,6 +34,10 @@ class PacketStatusStatCards extends StatelessWidget {
     final detail = total == 0
         ? 'No requirements yet'
         : '$sat of $total requirements satisfied';
+
+    if (!kEvalMode) {
+      return ('Checklist', detail);
+    }
 
     final headline = switch (r.overallConfidence) {
       ConfidenceLevel.high => 'Strong alignment',

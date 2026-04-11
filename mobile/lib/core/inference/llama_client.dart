@@ -33,9 +33,12 @@ void _llamaIsolateEntry(List<dynamic> args) {
     mp.useMemorymap = true;
     mp.useMemoryLock = false;
 
+    // nBatch 4096 doubled native decode buffers and caused jetsam on some phones.
+    // Stay at 2048; InferenceService clamps prompts so token count stays below that.
     final cp = ContextParams();
     cp.nCtx = 4096;
     cp.nBatch = 2048;
+    cp.nUbatch = 2048;
 
     final sp = SamplerParams();
     sp.greedy = true;
@@ -69,6 +72,10 @@ void _llamaIsolateEntry(List<dynamic> args) {
             'phase':
                 'Starting inference…',
           });
+
+          // Each chat is a fresh turn. Without clear(), _nPos and KV cache stay
+          // filled from the last run → second "Check documents" hits context limit.
+          llama!.clear();
 
           // Rough token estimate (~4 chars/token for English; conservative for JSON/OCR)
           final estPromptTokens = (prompt.length / 4).ceil().clamp(1, 100000);

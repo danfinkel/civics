@@ -1,14 +1,20 @@
 /// High-level inference service for CivicLens
 ///
 /// Pipeline: Image → OCR → llama.cpp → JSON Results
+///
+/// llama_cpp_dart requires the full prompt in one batch (`nBatch`); keep prompts
+/// under ~1900 tokens (chars cap + clamp) so we avoid LlamaException and jetsam.
 
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+
 import 'llama_client.dart';
-import 'ocr_service.dart';
-import 'response_parser.dart';
 import 'model_manager.dart';
+import 'ocr_service.dart';
+import 'prompt_templates.dart';
+import 'response_parser.dart';
 import '../models/track_a_result.dart';
 import '../models/track_b_result.dart';
+import '../utils/eval_mode.dart';
 
 /// Result of an inference operation
 class InferenceResult<T> {
@@ -73,6 +79,10 @@ enum InferenceMode {
   cloud,
   auto,
 }
+
+/// Track A can need ~4k chars of OCR (notice + two pay stubs) plus preamble; keep
+/// under `nCtx` with room for output (see llama_client nBatch/nCtx).
+const int _kMaxLocalLlmPromptChars = 5600;
 
 /// High-level service for document analysis inference
 class InferenceService {
@@ -177,18 +187,19 @@ class InferenceService {
 
     // Step 2: Build prompt
     final extractedText = _formatOcrResults(ocrResults, documentDescriptions);
-    final prompt = _buildTextOnlyPrompt(
+    var prompt = _buildTextOnlyPrompt(
       track: 'b',
       extractedText: extractedText,
       documentCount: documents.length,
     );
+    prompt = _clampPromptForLocalLlm(prompt);
 
     // Step 3: LLM inference with progress
     onLlmProgress?.call(0.0, phase: 'Starting…');
     final llmStopwatch = Stopwatch()..start();
     final response = await _localClient.chat(
       prompt: prompt,
-      maxTokens: 2048,
+      maxTokens: 1400,
       onProgress: onLlmProgress,
     );
     llmStopwatch.stop();
@@ -221,15 +232,103 @@ class InferenceService {
     );
   }
 
-  String _formatOcrResults(Map<int, String> results, List<String>? descriptions) {
+  /// Track A: the notice often puts **response deadline / consequences** in the
+  /// body below the letterhead. Supporting docs were at 600 chars, which cut
+  /// typical pay stubs (~1k OCR) and injected `[... text truncated...]` — the model
+  /// then told users the "document" was truncated. Use ~1100 per supporting doc.
+  String _formatOcrResultsTrackA(
+    Map<int, String> results,
+    List<String> descriptions,
+  ) {
+    const noticeMax = 2000;
+    const supportingMax = 1100;
+    const maxTotalChars = 4200;
     final buffer = StringBuffer();
-    for (var i = 0; i < results.length; i++) {
-      final desc = descriptions != null && i < descriptions.length ? descriptions[i] : 'Document ${i + 1}';
-      buffer.writeln('--- $desc ---');
-      buffer.writeln(results[i] ?? '');
-      buffer.writeln();
+    var total = 0;
+    final n = results.length;
+    for (var i = 0; i < n; i++) {
+      final desc =
+          i < descriptions.length ? descriptions[i] : 'Document ${i + 1}';
+      final cap = i == 0 ? noticeMax : supportingMax;
+      var body = results[i] ?? '';
+      if (body.length > cap) {
+        body =
+            '${body.substring(0, cap)}\n[... text truncated for model limits ...]';
+      }
+      final header = '--- $desc ---\n';
+      final section = '$header$body\n\n';
+      if (total + section.length > maxTotalChars) {
+        final remaining = maxTotalChars - total - header.length;
+        if (remaining > 200) {
+          buffer.write(header);
+          buffer.writeln(body.substring(0, remaining.clamp(0, body.length)));
+          buffer.writeln('[... document truncated; later pages omitted ...]');
+        }
+        break;
+      }
+      buffer.write(section);
+      total += section.length;
     }
     return buffer.toString();
+  }
+
+  /// Per-section and total caps (tight: paired with [_clampPromptForLocalLlm]).
+  String _formatOcrResults(
+    Map<int, String> results,
+    List<String>? descriptions, {
+    int maxCharsPerSection = 800,
+    int maxTotalChars = 2400,
+  }) {
+    final buffer = StringBuffer();
+    var total = 0;
+    for (var i = 0; i < results.length; i++) {
+      final desc = descriptions != null && i < descriptions.length
+          ? descriptions[i]
+          : 'Document ${i + 1}';
+      var body = results[i] ?? '';
+      if (body.length > maxCharsPerSection) {
+        body =
+            '${body.substring(0, maxCharsPerSection)}\n[... text truncated for model limits ...]';
+      }
+      final header = '--- $desc ---\n';
+      final section = '$header$body\n\n';
+      if (total + section.length > maxTotalChars) {
+        final remaining = maxTotalChars - total - header.length;
+        if (remaining > 200) {
+          buffer.write(header);
+          buffer.writeln(body.substring(0, remaining.clamp(0, body.length)));
+          buffer.writeln('[... document truncated; later pages omitted ...]');
+        }
+        break;
+      }
+      buffer.write(section);
+      total += section.length;
+    }
+    return buffer.toString();
+  }
+
+  /// Hard cap final prompt length; preserves Gemma turn markers and instruction head.
+  String _clampPromptForLocalLlm(String prompt) {
+    if (prompt.length <= _kMaxLocalLlmPromptChars) return prompt;
+
+    const endTurn = '<end_of_turn>';
+    final endIdx = prompt.lastIndexOf(endTurn);
+    if (endIdx < 0) {
+      return '${prompt.substring(0, _kMaxLocalLlmPromptChars - 40)}\n\n[Truncated]';
+    }
+
+    final tail = prompt.substring(endIdx);
+    final headBudget = _kMaxLocalLlmPromptChars - tail.length - 60;
+    if (headBudget < 200) {
+      return '${prompt.substring(0, _kMaxLocalLlmPromptChars - 40)}\n\n[Truncated]';
+    }
+
+    var head = prompt.substring(0, endIdx);
+    if (head.length > headBudget) {
+      head =
+          '${head.substring(0, headBudget)}\n\n[Body truncated for on-device limits.]';
+    }
+    return '$head$tail';
   }
 
   String _buildTextOnlyPrompt({
@@ -239,29 +338,210 @@ class InferenceService {
   }) {
     if (track == 'b') {
       return '<start_of_turn>user\n'
-          'You are helping a family prepare their Boston Public Schools registration packet.\n'
-          '\n'
-          'The BPS registration checklist requires:\n'
-          '- Proof of child\'s age (birth certificate or passport)\n'
-          '- TWO proofs of Boston residency from DIFFERENT categories\n'
-          '- Current immunization record\n'
-          '\n'
-          'I have extracted text from $documentCount documents using OCR:\n'
-          '\n'
-          '$extractedText\n'
-          '\n'
-          'Analyze what documents are present and whether they satisfy BPS requirements.\n'
-          '\n'
-          'Respond with ONLY valid JSON (no markdown fences, no text before or after). Use double quotes for all keys and strings.\n'
-          'JSON object shape:\n'
-          '- "requirements": array of objects, each with "requirement", "status" (satisfied|questionable|missing), "matched_document", "evidence", optional "notes", optional "confidence" (high|medium|low)\n'
-          '- "duplicate_category_flag": boolean\n'
-          '- "duplicate_category_explanation": string (empty if not applicable)\n'
-          '- "family_summary": string summarizing what to bring\n'
+          'BPS registration packet check. Requirements: child age proof (birth cert/passport); '
+          'TWO Boston residency proofs from different categories (lease/deed, utility, bank stmt, '
+          'gov mail, employer letter, affidavit); immunization record. Two docs same category = '
+          'only one proof — set duplicate_category_flag true.\n\n'
+          'OCR from $documentCount document(s) (may have errors):\n\n'
+          '$extractedText\n\n'
+          'Return ONLY valid JSON (no markdown). '
+          '{"requirements":[{"requirement":"","status":"satisfied|questionable|missing",'
+          '"matched_document":"","evidence":"","notes":"","confidence":"high|medium|low"}],'
+          '"duplicate_category_flag":false,"duplicate_category_explanation":"",'
+          '"family_summary":""}\n'
           '<end_of_turn>\n'
           '<start_of_turn>model\n';
     }
     return '';
+  }
+
+  /// Track A: notice + supporting photos → OCR → LLM → [TrackAResult].
+  Future<InferenceResult<TrackAResult>> analyzeTrackAWithOcr({
+    required List<Uint8List> documents,
+    required List<String> supportingDocumentLabels,
+    void Function(int docIndex, int totalDocs)? onOcrProgress,
+    void Function(double progress, {String? phase})? onLlmProgress,
+  }) async {
+    if (!isReady) {
+      return InferenceResult.failure(
+        errorMessage: 'Inference service not initialized',
+        elapsed: Duration.zero,
+      );
+    }
+
+    if (documents.isEmpty) {
+      return InferenceResult.failure(
+        errorMessage: 'No documents to analyze',
+        elapsed: Duration.zero,
+      );
+    }
+
+    final totalStopwatch = Stopwatch()..start();
+
+    final ocrStopwatch = Stopwatch()..start();
+    final ocrResults = <int, String>{};
+
+    for (var i = 0; i < documents.length; i++) {
+      onOcrProgress?.call(i, documents.length);
+      final result = await _ocrService.extractText(documents[i]);
+      ocrResults[i] = result.text;
+    }
+    onOcrProgress?.call(documents.length, documents.length);
+    ocrStopwatch.stop();
+
+    if (kInferenceDiagnostics) {
+      for (var i = 0; i < documents.length; i++) {
+        final t = ocrResults[i] ?? '';
+        _inferenceDiag(
+          '[TrackA][ocr] doc=$i len=${t.length} trim=${t.trim().length} '
+          'preview=${_inferenceOneLinePreview(t)}',
+        );
+      }
+    }
+
+    final hasAnyText = ocrResults.values.any((text) => text.trim().isNotEmpty);
+    if (!hasAnyText) {
+      return InferenceResult.failure(
+        errorMessage: 'Could not extract text from documents',
+        elapsed: totalStopwatch.elapsed,
+      );
+    }
+
+    final descriptions = <String>[
+      'Government notice',
+      ...supportingDocumentLabels,
+    ];
+    final extractedText = _formatOcrResultsTrackA(ocrResults, descriptions);
+
+    final preamble =
+        PromptTemplates.trackAOcrOnly(documentLabels: supportingDocumentLabels);
+    final userBlock = '$preamble\n\n'
+        'IMPORTANT: No images are attached. Base your analysis only on this '
+        'OCR output (errors and gaps are possible).\n'
+        'If a section ends with the line '
+        '"[... text truncated for model limits ...]", only part of the extracted '
+        'text was included in this prompt — that is not a problem with the '
+        'resident photo. Do not say their upload or document image is '
+        '"truncated"; use caveats only for real gaps in the OCR text.\n\n'
+        '$extractedText';
+
+    var prompt = userBlock.contains('<start_of_turn>')
+        ? userBlock
+        : '<start_of_turn>user\n$userBlock\n<end_of_turn>\n<start_of_turn>model\n';
+    final promptBeforeClamp = prompt;
+    prompt = _clampPromptForLocalLlm(prompt);
+    if (kInferenceDiagnostics) {
+      _inferenceDiag(
+        '[TrackA][prompt] formattedOcrLen=${extractedText.length} '
+        'beforeClamp=${promptBeforeClamp.length} afterClamp=${prompt.length} '
+        'clamped=${prompt.length < promptBeforeClamp.length}',
+      );
+    }
+
+    onLlmProgress?.call(0.0, phase: 'Starting…');
+    final llmStopwatch = Stopwatch()..start();
+    final response = await _localClient.chat(
+      prompt: prompt,
+      maxTokens: 1400,
+      onProgress: onLlmProgress,
+    );
+    llmStopwatch.stop();
+    onLlmProgress?.call(1.0, phase: 'Done');
+    totalStopwatch.stop();
+
+    if (!response.isSuccess) {
+      if (kInferenceDiagnostics) {
+        _inferenceDiag(
+          '[TrackA][llm] success=false err=${response.errorMessage}',
+        );
+      }
+      return InferenceResult.failure(
+        errorMessage: response.errorMessage ?? 'Inference failed',
+        elapsed: totalStopwatch.elapsed,
+      );
+    }
+
+    if (kInferenceDiagnostics) {
+      final raw = response.rawText;
+      _inferenceDiag(
+        '[TrackA][llm] success=true ms=${llmStopwatch.elapsedMilliseconds} '
+        'rawLen=${raw.length}',
+      );
+      _inferenceDiag('[TrackA][llm.raw] ${_inferenceOneLinePreview(raw, max: 2000)}');
+    }
+
+    final parseResult = ResponseParser.parseTrackA(response.rawText);
+    if (kInferenceDiagnostics) {
+      if (parseResult.isSuccess && parseResult.data != null) {
+        final d = parseResult.data!;
+        _inferenceDiag(
+          '[TrackA][parse] ok=true deadline=${d.noticeSummary.deadline} '
+          'uncertain=${d.noticeSummary.isUncertain} '
+          'categories=${d.noticeSummary.requestedCategories} '
+          'proofItems=${d.proofPack.length} actionLen=${d.actionSummary.length}',
+        );
+      } else {
+        _inferenceDiag(
+          '[TrackA][parse] ok=false err=${parseResult.errorMessage}',
+        );
+      }
+    }
+    if (!parseResult.isSuccess || parseResult.data == null) {
+      return InferenceResult.failure(
+        errorMessage: parseResult.errorMessage ?? 'Failed to parse response',
+        elapsed: totalStopwatch.elapsed,
+        rawResponse: response.rawText,
+      );
+    }
+
+    return InferenceResult.success(
+      data: parseResult.data!,
+      elapsed: totalStopwatch.elapsed,
+      rawResponse: response.rawText,
+    );
+  }
+
+  /// Raw LLM output for eval harness (`/infer`). Runs OCR on [imageBytes] when
+  /// non-empty, appends text to the user message, then calls the local llama isolate.
+  ///
+  /// [temperature] is passed through (sampler wiring in the isolate may still
+  /// be greedy). Callers may pass `track` via the prompt until routing exists.
+  Future<String?> inferRaw({
+    required Uint8List imageBytes,
+    required String prompt,
+    double temperature = 0.0,
+    int? tokenBudget,
+  }) async {
+    if (!isReady) {
+      throw StateError('Inference service not initialized');
+    }
+
+    final maxTokens = tokenBudget ?? 2048;
+    var userContent = prompt.trim();
+
+    if (imageBytes.isNotEmpty) {
+      final ocr = await _ocrService.extractText(imageBytes);
+      if (ocr.text.trim().isNotEmpty) {
+        userContent =
+            '$userContent\n\n--- Extracted document text (OCR) ---\n${ocr.text}';
+      }
+    }
+
+    var fullPrompt = userContent.contains('<start_of_turn>')
+        ? userContent
+        : '<start_of_turn>user\n$userContent\n<end_of_turn>\n<start_of_turn>model\n';
+    fullPrompt = _clampPromptForLocalLlm(fullPrompt);
+
+    final response = await _localClient.chat(
+      prompt: fullPrompt,
+      temperature: temperature,
+      maxTokens: maxTokens,
+    );
+
+    if (!response.isSuccess) {
+      throw StateError(response.errorMessage ?? 'Inference failed');
+    }
+    return response.rawText;
   }
 
   void dispose() {
@@ -272,3 +552,14 @@ class InferenceService {
   }
 }
 
+void _inferenceDiag(String line) {
+  if (kInferenceDiagnostics) {
+    debugPrint(line);
+  }
+}
+
+String _inferenceOneLinePreview(String s, {int max = 500}) {
+  final t = s.replaceAll('\r', ' ').replaceAll('\n', '\\n');
+  if (t.length <= max) return t;
+  return '${t.substring(0, max)}…(+${t.length - max} more chars)';
+}

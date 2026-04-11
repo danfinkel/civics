@@ -84,6 +84,9 @@ Thumbs.db
 .env
 .env.local
 
+# Dev workflow (scripts/dev_deploy.sh)
+.pubspec_hash
+
 # Model weights (large binary files)
 assets/models/*.gguf
 assets/models/*.bin

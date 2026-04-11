@@ -2,6 +2,10 @@
 
 A new Flutter project.
 
+## Physical device (install + model on iPhone)
+
+Stable workflow (**Profile/Release** in Xcode, then push the GGUF): see **`scripts/README.md`** (section *Physical iPhone: stable app + model* at the top).
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

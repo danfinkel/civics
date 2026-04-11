@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/inference/gemma_client.dart';
+import '../../core/inference/model_manager.dart' as mgr;
 import '../../shared/navigation/prism_page_routes.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/theme/prism_typography.dart';
@@ -28,10 +28,23 @@ class ModelDownloadScreen extends StatefulWidget {
   @override
   State<ModelDownloadScreen> createState() => _ModelDownloadScreenState();
 
-  /// Check if model has been downloaded
+  /// True when the GGUF exists in app Documents and is full-sized (not prefs-only).
   static Future<bool> isModelDownloaded() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_prefsKey) ?? false;
+    final manager = mgr.ModelManager();
+    try {
+      final available = await manager.isModelAvailable();
+      final prefs = await SharedPreferences.getInstance();
+      final flagged = prefs.getBool(_prefsKey) ?? false;
+      if (available) {
+        return true;
+      }
+      if (flagged) {
+        await prefs.remove(_prefsKey);
+      }
+      return false;
+    } finally {
+      manager.dispose();
+    }
   }
 
   /// Mark model as downloaded
@@ -45,37 +58,44 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
   DownloadState _state = DownloadState.notStarted;
   double _progress = 0.0;
   String? _errorMessage;
+  mgr.ModelManager? _downloadManager;
+
+  @override
+  void dispose() {
+    _downloadManager?.dispose();
+    super.dispose();
+  }
 
   Future<void> _startDownload() async {
+    _downloadManager?.dispose();
+    _downloadManager = mgr.ModelManager();
+
     setState(() {
       _state = DownloadState.downloading;
       _progress = 0.0;
+      _errorMessage = null;
     });
 
-    final client = GemmaClient();
-
-    await client.initialize(
-      modelPath: '/path/to/gemma4-e2b', // TODO: Agent 2 to provide actual path
-      onProgress: (progress) {
-        setState(() => _progress = progress);
-      },
-      onStateChange: (state) {
-        switch (state) {
-          case ModelDownloadState.ready:
-            setState(() => _state = DownloadState.ready);
-            ModelDownloadScreen.markDownloaded();
-            break;
-          case ModelDownloadState.error:
-            setState(() {
-              _state = DownloadState.error;
-              _errorMessage = 'Download failed. Please try again.';
-            });
-            break;
-          default:
-            break;
-        }
+    final result = await _downloadManager!.downloadModel(
+      onProgress: (progress, _, __) {
+        if (!mounted) return;
+        setState(() => _progress = progress.clamp(0.0, 1.0));
       },
     );
+
+    if (!mounted) return;
+
+    if (result.success && result.modelPath != null) {
+      await ModelDownloadScreen.markDownloaded();
+      setState(() => _state = DownloadState.ready);
+    } else {
+      setState(() {
+        _state = DownloadState.error;
+        _errorMessage = result.errorMessage ??
+            'Download failed. Use the same Wi‑Fi as your Mac, set MODEL_SERVER_URL '
+            'to your Mac’s IP (not localhost), run scripts/serve_model.sh, then try again.';
+      });
+    }
   }
 
   void _continueToApp() {
@@ -170,7 +190,10 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'This requires a one-time download of 2.5GB. Connect to WiFi recommended.',
+                  'This requires a one-time download of ~2.9GB from the URL in '
+                  'lib/core/config/model_config.dart (set by scripts/dev_deploy.sh). '
+                  'On a physical iPhone, that URL must use your Mac\'s LAN IP while '
+                  'scripts/serve_model.sh is running — not localhost. Wi‑Fi recommended.',
                   style: PrismTypography.publicSans(
                     fontSize: 14,
                     color: const Color(0xFF92400E),
@@ -186,8 +209,8 @@ class _ModelDownloadScreenState extends State<ModelDownloadScreen> {
 
   Widget _buildDownloadingContent() {
     final percent = (_progress * 100).round();
-    final mbDownloaded = (_progress * 2.5 * 1024).round();
-    final totalMb = (2.5 * 1024).round();
+    final totalMb = (mgr.ModelManager.modelSizeBytes / (1024 * 1024)).round();
+    final mbDownloaded = (_progress * totalMb).round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

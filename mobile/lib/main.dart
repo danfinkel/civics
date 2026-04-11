@@ -1,14 +1,33 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import 'core/inference/inference_service.dart';
+import 'core/utils/eval_mode.dart';
+import 'eval/eval_server.dart';
 import 'features/home/home_screen.dart';
 import 'features/onboarding/model_download_screen.dart';
 import 'features/splash/civic_lens_splash_screen.dart';
 import 'shared/theme/app_theme.dart';
 
-void main() {
-  runZonedGuarded(() {
-    WidgetsFlutterBinding.ensureInitialized();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
+  if (kEvalMode) {
+    final inference = InferenceService();
+    final ok = await inference.initialize();
+    if (ok) {
+      final server = EvalServer(inference);
+      await server.start(port: 8080);
+      debugPrint('Eval mode: HTTP server on :8080');
+    } else {
+      debugPrint(
+        'Eval mode: inference failed to initialize: ${inference.lastError}',
+      );
+    }
+  }
+
+  runZonedGuarded(() {
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
     };

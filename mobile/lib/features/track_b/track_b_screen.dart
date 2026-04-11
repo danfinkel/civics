@@ -8,9 +8,11 @@ import '../../shared/navigation/prism_page_routes.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/theme/prism_tokens.dart';
 import '../../shared/theme/prism_typography.dart';
+import '../../core/utils/label_formatter.dart';
 import '../../shared/widgets/prism/prism_shimmer.dart';
 import 'track_b_controller.dart' hide DocumentSlot;
 import 'widgets/document_slot.dart';
+import 'widgets/duplicate_category_banner.dart';
 import 'widgets/requirement_row.dart';
 import 'widgets/packet_status_hero.dart';
 import 'widgets/packet_status_stat_cards.dart';
@@ -29,14 +31,8 @@ class _TrackBScreenState extends State<TrackBScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize service on startup
-    _initializeService();
-    // Set up progress callback
+    // Llama loads when user runs analysis (see TrackBController.analyzeDocuments).
     _controller.onProgress = (_) => setState(() {});
-  }
-
-  Future<void> _initializeService() async {
-    await _controller.initializeService();
   }
 
   @override
@@ -462,6 +458,14 @@ class _TrackBScreenState extends State<TrackBScreen> {
     final theme = Theme.of(context).textTheme;
     final total = result.requirements.length;
     final sat = result.satisfiedCount;
+    final duplicateBannerText = () {
+      final friendly = LabelFormatter.duplicateCategoryUserMessage(
+        result.duplicateCategoryExplanation,
+      );
+      return friendly.isNotEmpty
+          ? friendly
+          : 'Two leases count as one proof — you need a second document type from a different category';
+    }();
 
     return Column(
       children: [
@@ -505,44 +509,11 @@ class _TrackBScreenState extends State<TrackBScreen> {
                 ),
               ),
               if (result.duplicateCategoryFlag) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightAmber,
-                      borderRadius: BorderRadius.circular(PrismRadii.md),
-                      boxShadow: PrismShadows.card(context),
-                      border: const Border(
-                        left: BorderSide(
-                          color: AppColors.warning,
-                          width: 4,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.warning_amber,
-                          color: AppColors.warning,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            result.duplicateCategoryExplanation.isNotEmpty
-                                ? result.duplicateCategoryExplanation
-                                : 'Two leases count as one proof — you need a second document type from a different category',
-                            style: PrismTypography.publicSans(
-                              fontSize: 14,
-                              height: 1.45,
-                              color: const Color(0xFF92400E),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: TrackBDuplicateCategoryBanner(
+                    message: duplicateBannerText,
                   ),
                 ),
               ],
@@ -663,23 +634,37 @@ class _PrismSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: prismCardDecoration(
-        context,
+      decoration: BoxDecoration(
         color: AppColors.lightBlue,
-        strong: true,
+        borderRadius: BorderRadius.circular(PrismRadii.md),
+        border: Border.all(color: AppColors.primary, width: 2),
+        boxShadow: PrismShadows.elevated(context),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(PrismRadii.md),
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(22),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: theme.headlineMedium),
+                  Text(
+                    title,
+                    style: theme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
                   const SizedBox(height: 12),
-                  Text(body, style: theme.bodyLarge),
+                  Text(
+                    body,
+                    style: theme.bodyLarge?.copyWith(
+                      fontSize: 18,
+                      height: 1.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),

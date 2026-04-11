@@ -11,8 +11,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
+import '../config/model_config.dart';
 
 /// Download state
 enum DownloadState {
@@ -64,20 +67,13 @@ typedef DownloadProgressCallback = void Function(
 
 /// Manages Gemma 4 E2B model download and verification
 class ModelManager {
-  // Model configuration
-  // Using Hugging Face as primary source (more reliable for hackathon)
-  static const String _hfModelUrl =
-      'https://huggingface.co/google/gemma-2b-it/resolve/main/gemma-2b-it.q4_0.gguf';
-
-  // Alternative: Google AI Edge (when Gemma 4 E2B is available)
-  static const String _googleAiEdgeUrl =
-      'https://storage.googleapis.com/mediapipe-models/gemma/...'; // TODO: Update when available
+  // Default download URL: lib/core/config/model_config.dart (regen: scripts/dev_deploy.sh)
 
   // Model metadata
   static const int modelSizeBytes = 2986344448; // ~2.9 GB (gemma-4-E2B-it-Q4_K_M.gguf)
   static const String expectedChecksum =
       '...'; // TODO: Update with actual SHA256
-  static const String modelFilename = 'gemma-4-E2B-it-Q4_K_M.gguf';
+  static const String modelFilename = kModelFilename;
 
   // Download configuration
   static const int _chunkSize = 1024 * 1024; // 1MB chunks
@@ -121,10 +117,20 @@ class ModelManager {
       return false;
     }
 
-    // Check file size
+    // Size gate: reference byte count may differ slightly from your GGUF build.
+    // Also, Finder/Xcode often show *decimal* GB (~1e9) while we compare raw bytes — a
+    // ~2.89 "GB" file can be below 0.99×expected and wrongly look "missing".
     final size = await file.length();
-    if (size < modelSizeBytes * 0.99) {
-      // Allow 1% tolerance
+    final minBytes = (modelSizeBytes * 0.92).round();
+    final maxBytes = (modelSizeBytes * 1.05).round();
+    if (size < minBytes || size > maxBytes) {
+      assert(() {
+        debugPrint(
+          'ModelManager.isModelAvailable: $path size=$size bytes; '
+          'accept window $minBytes..$maxBytes (nominal $modelSizeBytes)',
+        );
+        return true;
+      }());
       return false;
     }
 
@@ -174,7 +180,7 @@ class ModelManager {
     _state = DownloadState.downloading;
     onStateChange?.call(_state);
 
-    final url = sourceUrl ?? _hfModelUrl;
+    final url = sourceUrl ?? kModelDownloadUrl;
     final partialPath = await _partialPath;
     final finalPath = await modelPath;
     final resumePosition = await _resumePosition;
