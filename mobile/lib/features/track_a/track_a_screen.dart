@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/imaging/document_capture.dart';
+import '../../core/models/track_a_notice_preview.dart';
 import '../../core/models/track_a_result.dart';
+import '../../core/utils/label_formatter.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../shared/theme/prism_tokens.dart';
 import '../../shared/theme/prism_typography.dart';
@@ -18,12 +20,13 @@ class _TrackAScreenState extends State<TrackAScreen> {
   final TrackAController _controller = TrackAController();
   bool _isAnalyzing = false;
   TrackAResult? _result;
+  bool _noticePreviewLoading = false;
+  TrackANoticePreview? _noticePreview;
 
   @override
   void initState() {
     super.initState();
-    // Defer Llama load until "Check my documents" — avoids peak RAM with
-    // capture/OCR and fixes OOM when opening this screen then picking photos.
+    // Llama may load when a notice is set (background preview) or on "Check my documents".
   }
 
   @override
@@ -40,6 +43,30 @@ class _TrackAScreenState extends State<TrackAScreen> {
     if (doc.blurResult.isBlurry && mounted) {
       _showBlurWarning(doc, isNotice: true);
     }
+
+    _scheduleNoticePreview();
+  }
+
+  /// Fire-and-forget notice read for step 2; ignores stale results if notice changes.
+  void _scheduleNoticePreview() {
+    final id = _controller.notice?.id;
+    if (id == null) return;
+
+    Future.microtask(() async {
+      if (!mounted || _controller.notice?.id != id) return;
+      setState(() {
+        _noticePreviewLoading = true;
+        _noticePreview = null;
+      });
+
+      final preview = await _controller.prefetchNoticePreview();
+
+      if (!mounted || _controller.notice?.id != id) return;
+      setState(() {
+        _noticePreviewLoading = false;
+        _noticePreview = preview;
+      });
+    });
   }
 
   Future<void> _onDocumentCaptured(int index, CapturedDocument doc) async {
@@ -102,6 +129,8 @@ class _TrackAScreenState extends State<TrackAScreen> {
               setState(() {
                 if (isNotice) {
                   _controller.clearNotice();
+                  _noticePreview = null;
+                  _noticePreviewLoading = false;
                 } else {
                   _controller.clearSupportingDocument(
                     _controller.supportingDocuments.indexWhere(
@@ -143,6 +172,8 @@ class _TrackAScreenState extends State<TrackAScreen> {
     setState(() {
       _controller.clearAll();
       _result = null;
+      _noticePreview = null;
+      _noticePreviewLoading = false;
     });
   }
 
@@ -229,6 +260,8 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   'Your Documents',
                   style: PrismTypography.spaceGrotesk(fontSize: 18),
                 ),
+                const SizedBox(height: 12),
+                _buildNoticeContextHint(),
                 const SizedBox(height: 16),
                 // Supporting documents
                 ...List.generate(
@@ -393,9 +426,140 @@ class _TrackAScreenState extends State<TrackAScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.close, size: 20),
-            onPressed: () => setState(() => _controller.clearNotice()),
+            onPressed: () => setState(() {
+              _controller.clearNotice();
+              _noticePreview = null;
+              _noticePreviewLoading = false;
+            }),
             color: AppColors.neutral,
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoticeContextHint() {
+    if (_noticePreviewLoading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Reading your notice…',
+                style: PrismTypography.publicSans(
+                  fontSize: 14,
+                  color: AppColors.neutral,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final p = _noticePreview;
+    if (p == null || !p.hasAnySignal) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Text(
+          'Add photos of documents that match what your notice asks for.',
+          style: PrismTypography.publicSans(
+            fontSize: 14,
+            color: AppColors.neutral,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (p.requestedCategories.isNotEmpty) ...[
+            Text(
+              'Your notice seems to ask for',
+              style: PrismTypography.publicSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.neutral,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: p.requestedCategories.map((c) {
+                final label = LabelFormatter.requirementLabel(c);
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBlue,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    label,
+                    style: PrismTypography.publicSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            if (p.deadline.isNotEmpty || p.hint.isNotEmpty)
+              const SizedBox(height: 10),
+          ],
+          if (p.deadline.isNotEmpty)
+            Text(
+              'Deadline: ${p.deadline}',
+              style: PrismTypography.publicSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          if (p.deadline.isNotEmpty && p.hint.isNotEmpty)
+            const SizedBox(height: 6),
+          if (p.hint.isNotEmpty)
+            Text(
+              p.hint,
+              style: PrismTypography.publicSans(
+                fontSize: 13,
+                color: AppColors.neutral,
+              ),
+            ),
         ],
       ),
     );

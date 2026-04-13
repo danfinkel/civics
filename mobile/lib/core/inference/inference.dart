@@ -9,5 +9,6 @@ export 'inference_service.dart';
 export 'response_parser.dart';
 export 'model_manager.dart';
 export 'performance_metrics.dart';
+export '../models/track_a_notice_preview.dart';
 export '../models/track_a_result.dart';
 export '../models/track_b_result.dart';

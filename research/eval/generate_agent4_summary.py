@@ -12,7 +12,7 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from runner import compute_summary  # noqa: E402
+from runner import FIELD_SCORE_LABELS, compute_summary  # noqa: E402
 
 
 def load_rows(path: Path) -> list[dict]:
@@ -32,6 +32,23 @@ def pct(x: float) -> str:
 
 def fmt_ms(x: float) -> str:
     return f"{int(round(x)):,}"
+
+
+def markdown_field_label_breakdown(s: dict) -> list[str]:
+    """Lines for per-label field judgment counts (includes verbatim_quote, etc.)."""
+    counts = s.get("field_label_counts") or {}
+    total = sum(counts.values())
+    if not total:
+        return ["_No field label counts._"]
+    lines: list[str] = [
+        f"- **Field judgments (n={total}):**",
+    ]
+    for lab in sorted(FIELD_SCORE_LABELS, key=lambda k: -counts.get(k, 0)):
+        c = counts.get(lab, 0)
+        if c == 0:
+            continue
+        lines.append(f"  - `{lab}`: {c} ({pct(c / total)})")
+    return lines
 
 
 def summarize_by_token_budget(rows: list[dict]) -> list[tuple[int | None, dict]]:
@@ -76,10 +93,21 @@ def markdown_block(
                 f"- **Parse OK rate:** {pct(s_all['parse_ok_rate'])}",
                 f"- **Field exact match rate:** {pct(s_all['exact_rate'])}",
                 f"- **Field partial match rate:** {pct(s_all['partial_rate'])}",
-                f"- **Hallucination rate (field-level):** {pct(s_all['hallucination_rate'])}",
+                f"- **Format mismatch rate:** {pct(s_all.get('format_mismatch_rate', 0))}",
+                f"- **Transcription-error rate:** {pct(s_all.get('transcription_error_rate', 0))}",
+                f"- **Semantic-paraphrase rate:** {pct(s_all.get('semantic_paraphrase_rate', 0))}",
+                f"- **Verbatim-quote rate:** {pct(s_all.get('verbatim_quote_rate', 0))}",
+                f"- **Misattribution rate:** {pct(s_all.get('misattribution_rate', 0))}",
+                f"- **Hallucinated rate (strict fabrication):** {pct(s_all['hallucination_rate'])}",
                 f"- **Missing rate:** {pct(s_all['missing_rate'])}",
                 f"- **Unreadable rate:** {pct(s_all['unreadable_rate'])}",
-                f"- **Avg score mean (0–2 scale):** {s_all['avg_score_mean']:.4f}",
+                f"- **Avg score mean (−1–2 scale):** {s_all['avg_score_mean']:.4f}",
+                "",
+            ]
+        )
+        lines.extend(markdown_field_label_breakdown(s_all))
+        lines.extend(
+            [
                 "",
                 "Document-level classification (if needed for narrative): see spike / separate experiments — this harness scores **field extraction** vs `ground_truth.csv`.",
                 "",
@@ -114,6 +142,12 @@ def markdown_block(
         lines.append(
             f"- Latency mean / p95: {fmt_ms(s['latency_mean_ms'])} / {fmt_ms(s['latency_p95_ms'])} ms"
         )
+        lines.append(
+            f"- Hallucinated (strict) / verbatim_quote / format_mismatch / transcription_error: "
+            f"{pct(s.get('hallucination_rate', 0))} / {pct(s.get('verbatim_quote_rate', 0))} / "
+            f"{pct(s.get('format_mismatch_rate', 0))} / {pct(s.get('transcription_error_rate', 0))}"
+        )
+        lines.extend(markdown_field_label_breakdown(s))
         lines.append("")
 
     # Token budget table if ablation

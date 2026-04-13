@@ -62,6 +62,8 @@ class EvalServer {
 
       final temperature = (body['temperature'] as num?)?.toDouble() ?? 0.0;
       final tokenBudget = (body['token_budget'] as num?)?.toInt();
+      final noticePreviewFirst = body['notice_preview_first'] == true ||
+          body['notice_preview_first'] == 'true';
 
       late final List<int> rawBytes;
       try {
@@ -75,14 +77,29 @@ class EvalServer {
 
       final sw = Stopwatch()..start();
       String? rawResponse;
+      int? previewMs;
+      int? extractMs;
       try {
-        rawResponse = await _inference.inferRaw(
-          imageBytes: Uint8List.fromList(rawBytes),
-          prompt: prompt,
-          temperature: temperature,
-          tokenBudget: tokenBudget,
-        );
-        _inferenceCount++;
+        if (noticePreviewFirst) {
+          final r = await _inference.inferRawWithNoticePreview(
+            imageBytes: Uint8List.fromList(rawBytes),
+            extractionPrompt: prompt,
+            temperature: temperature,
+            tokenBudget: tokenBudget,
+          );
+          rawResponse = r.rawText;
+          previewMs = r.previewElapsedMs;
+          extractMs = r.extractElapsedMs;
+          _inferenceCount += 2;
+        } else {
+          rawResponse = await _inference.inferRaw(
+            imageBytes: Uint8List.fromList(rawBytes),
+            prompt: prompt,
+            temperature: temperature,
+            tokenBudget: tokenBudget,
+          );
+          _inferenceCount++;
+        }
       } catch (e, st) {
         debugPrint('Eval /infer error: $e\n$st');
         return Response.internalServerError(
@@ -94,12 +111,18 @@ class EvalServer {
       _lastInferenceMs = sw.elapsedMilliseconds;
 
       final text = rawResponse ?? '';
+      final bodyOut = <String, dynamic>{
+        'response': text,
+        'elapsed_ms': sw.elapsedMilliseconds,
+        'parse_ok': text.isNotEmpty,
+        'notice_preview_first': noticePreviewFirst,
+      };
+      if (previewMs != null) {
+        bodyOut['preview_elapsed_ms'] = previewMs;
+        bodyOut['extract_elapsed_ms'] = extractMs;
+      }
       return Response.ok(
-        jsonEncode({
-          'response': text,
-          'elapsed_ms': sw.elapsedMilliseconds,
-          'parse_ok': text.isNotEmpty,
-        }),
+        jsonEncode(bodyOut),
         headers: {'content-type': 'application/json'},
       );
     });

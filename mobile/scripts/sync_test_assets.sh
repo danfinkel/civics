@@ -19,6 +19,7 @@ declare -a WANT=(
   "D13-degraded.jpg"
   "D14-degraded.jpg"
   "D01-blurry.jpg"
+  "D01-clean-raster.jpg"
 )
 
 echo "=== sync_test_assets — demo image checklist ==="

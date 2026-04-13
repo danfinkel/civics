@@ -29,8 +29,7 @@ After the **eval server + `runner.py` baseline** (prior report), we implemented 
 | Metrics polling | `research/eval/runner.py` — `--metrics-log`, `--metrics-interval` | Append JSONL samples from **`GET /metrics`** for the whole experiment (Friday option in plan). |
 | Partial-match rate | `research/eval/runner.py` — `compute_summary()` | **`partial_rate`** for clearer accuracy language in writeups. |
 | Latency plot | `research/eval/plot_run_latency.py` | PNG: **elapsed_ms vs JSONL row order** (thermal narrative). |
-| Agent 4 summary | `research/eval/generate_agent4_summary.py` | Builds **`summary_for_agent4.md`** from one or more JSONL files (combined + per-file + token-budget table when applicable). |
-| Summary template | `research/eval/summary_for_agent4.md` | Placeholder + instructions until JSONL exists. |
+| Agent 4 summary | `research/eval/generate_agent4_summary.py` | Builds **`summary_for_agent4.md`** (or any `-o` path) from one or more JSONL files. Regenerate after each eval batch (see `research/eval/README.md` playbook); the repo does not ship a placeholder copy. |
 | Runbook script | `research/eval/run_week3_experiments.sh` | `baseline` \| `ablation` \| `thermal` \| `all` — mirrors Wed/Thu/Fri commands. |
 | Harness docs | `research/eval/README.md` | Full Wed–Fri flow, post-run steps, tables to fill, endpoint reference. |
 | Plotting dependency | `research/eval/requirements.txt` | **`matplotlib`** added. |
@@ -77,5 +76,5 @@ After the **eval server + `runner.py` baseline** (prior report), we implemented 
 | Staged experiments | `research/eval/run_week3_experiments.sh` |
 | Plot script | `research/eval/plot_run_latency.py` |
 | Agent 4 generator | `research/eval/generate_agent4_summary.py` |
-| Agent 4 summary (template) | `research/eval/summary_for_agent4.md` |
+| Agent 4 summary output | `summary_for_agent4.md` (generated; default `-o` for `generate_agent4_summary.py`) |
 | Eval server | `mobile/lib/eval/eval_server.dart` |

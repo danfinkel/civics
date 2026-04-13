@@ -8,6 +8,7 @@
 /// parsing strategies achieved 100% parseability.
 
 import 'dart:convert';
+import '../models/track_a_notice_preview.dart';
 import '../models/track_a_result.dart';
 import '../models/track_b_result.dart';
 import '../utils/label_formatter.dart';
@@ -115,6 +116,32 @@ class ResponseParser {
     } catch (e) {
       return ParseResult.failure(
         'JSON parsed but invalid Track B structure: $e',
+        raw,
+      );
+    }
+  }
+
+  /// Parse Track A notice-only preview JSON (step 2 hint card).
+  static ParseResult<TrackANoticePreview> parseTrackANoticePreview(String raw) {
+    final trimmed = raw.trim();
+    final jsonResult =
+        _parseWithRetry(_repairTrackAGemmaJson(trimmed)) ?? _parseWithRetry(trimmed);
+
+    if (jsonResult == null) {
+      return ParseResult.failure(
+        'Could not parse notice preview JSON',
+        raw,
+      );
+    }
+
+    try {
+      final result = TrackANoticePreview.fromJson(
+        Map<String, dynamic>.from(jsonResult),
+      );
+      return ParseResult.success(result, raw, 'track_a_notice_preview');
+    } catch (e) {
+      return ParseResult.failure(
+        'Invalid notice preview structure: $e',
         raw,
       );
     }

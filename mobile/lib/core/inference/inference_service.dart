@@ -12,6 +12,7 @@ import 'model_manager.dart';
 import 'ocr_service.dart';
 import 'prompt_templates.dart';
 import 'response_parser.dart';
+import '../models/track_a_notice_preview.dart';
 import '../models/track_a_result.dart';
 import '../models/track_b_result.dart';
 import '../utils/eval_mode.dart';
@@ -501,6 +502,109 @@ class InferenceService {
     );
   }
 
+  /// Track A: government notice image only → OCR → short LLM → step-2 hints.
+  ///
+  /// Call only when [isReady]; [TrackAController.prefetchNoticePreview] initializes first.
+  Future<InferenceResult<TrackANoticePreview>> analyzeTrackANoticePreview({
+    required Uint8List noticeBytes,
+    void Function(double progress, {String? phase})? onLlmProgress,
+  }) async {
+    if (!isReady) {
+      return InferenceResult.failure(
+        errorMessage: 'Inference service not initialized',
+        elapsed: Duration.zero,
+      );
+    }
+
+    final totalStopwatch = Stopwatch()..start();
+
+    final ocr = await _ocrService.extractText(noticeBytes);
+    final text = ocr.text;
+    if (text.trim().isEmpty) {
+      totalStopwatch.stop();
+      return InferenceResult.failure(
+        errorMessage: 'Could not extract text from notice',
+        elapsed: totalStopwatch.elapsed,
+      );
+    }
+
+    final ocrResults = <int, String>{0: text};
+    final extractedText =
+        _formatOcrResultsTrackA(ocrResults, const ['Government notice']);
+
+    final preamble = PromptTemplates.trackANoticePreviewOnly();
+    final userBlock = '$preamble\n\n'
+        'IMPORTANT: No images are attached. Base your response only on this '
+        'OCR output (errors and gaps are possible).\n'
+        'If a section ends with the line '
+        '"[... text truncated for model limits ...]", only part of the extracted '
+        'text was included — do not say the image was truncated.\n\n'
+        '$extractedText';
+
+    var prompt = userBlock.contains('<start_of_turn>')
+        ? userBlock
+        : '<start_of_turn>user\n$userBlock\n<end_of_turn>\n<start_of_turn>model\n';
+    final promptBeforeClamp = prompt;
+    prompt = _clampPromptForLocalLlm(prompt);
+    if (kInferenceDiagnostics) {
+      _inferenceDiag(
+        '[TrackA][preview][prompt] ocrLen=${extractedText.length} '
+        'beforeClamp=${promptBeforeClamp.length} afterClamp=${prompt.length}',
+      );
+    }
+
+    onLlmProgress?.call(0.0, phase: 'Starting…');
+    final llmStopwatch = Stopwatch()..start();
+    final response = await _localClient.chat(
+      prompt: prompt,
+      maxTokens: 380,
+      onProgress: onLlmProgress,
+    );
+    llmStopwatch.stop();
+    onLlmProgress?.call(1.0, phase: 'Done');
+    totalStopwatch.stop();
+
+    if (!response.isSuccess) {
+      if (kInferenceDiagnostics) {
+        _inferenceDiag('[TrackA][preview][llm] err=${response.errorMessage}');
+      }
+      return InferenceResult.failure(
+        errorMessage: response.errorMessage ?? 'Inference failed',
+        elapsed: totalStopwatch.elapsed,
+      );
+    }
+
+    if (kInferenceDiagnostics) {
+      _inferenceDiag(
+        '[TrackA][preview][llm] ok ms=${llmStopwatch.elapsedMilliseconds} '
+        'raw=${_inferenceOneLinePreview(response.rawText, max: 800)}',
+      );
+    }
+
+    final parseResult = ResponseParser.parseTrackANoticePreview(response.rawText);
+    if (!parseResult.isSuccess || parseResult.data == null) {
+      if (kInferenceDiagnostics) {
+        _inferenceDiag(
+          '[TrackA][preview][parse] err=${parseResult.errorMessage}',
+        );
+      }
+      return InferenceResult.failure(
+        errorMessage: parseResult.errorMessage ?? 'Failed to parse preview',
+        elapsed: totalStopwatch.elapsed,
+        rawResponse: response.rawText,
+      );
+    }
+
+    return InferenceResult.success(
+      data: parseResult.data!,
+      elapsed: totalStopwatch.elapsed,
+      rawResponse: response.rawText,
+      confidence: parseResult.data!.hasAnySignal
+          ? ConfidenceLevel.medium
+          : ConfidenceLevel.uncertain,
+    );
+  }
+
   /// Raw LLM output for eval harness (`/infer`). Runs OCR on [imageBytes] when
   /// non-empty, appends text to the user message, then calls the local llama isolate.
   ///
@@ -544,12 +648,111 @@ class InferenceService {
     return response.rawText;
   }
 
+  /// Eval only: production-aligned notice preview ([PromptTemplates.trackANoticePreviewOnly])
+  /// then a second LLM pass with [extractionPrompt], OCR, and raw preview output.
+  Future<InferRawNoticePreviewResult> inferRawWithNoticePreview({
+    required Uint8List imageBytes,
+    required String extractionPrompt,
+    double temperature = 0.0,
+    int? tokenBudget,
+    int previewMaxTokens = 380,
+  }) async {
+    if (!isReady) {
+      throw StateError('Inference service not initialized');
+    }
+
+    final maxTokens = tokenBudget ?? 2048;
+
+    final ocr = await _ocrService.extractText(imageBytes);
+    if (ocr.text.trim().isEmpty) {
+      throw StateError('Could not extract text from notice');
+    }
+
+    final ocrResults = <int, String>{0: ocr.text};
+    final extractedText = _formatOcrResultsTrackA(
+      ocrResults,
+      const ['Government notice'],
+    );
+
+    final preamble = PromptTemplates.trackANoticePreviewOnly();
+    final previewUserBlock = '$preamble\n\n'
+        'IMPORTANT: No images are attached. Base your response only on this '
+        'OCR output (errors and gaps are possible).\n'
+        'If a section ends with the line '
+        '"[... text truncated for model limits ...]", only part of the extracted '
+        'text was included — do not say the image was truncated.\n\n'
+        '$extractedText';
+
+    var previewPrompt = previewUserBlock.contains('<start_of_turn>')
+        ? previewUserBlock
+        : '<start_of_turn>user\n$previewUserBlock\n<end_of_turn>\n<start_of_turn>model\n';
+    previewPrompt = _clampPromptForLocalLlm(previewPrompt);
+
+    final previewSw = Stopwatch()..start();
+    final previewResponse = await _localClient.chat(
+      prompt: previewPrompt,
+      temperature: temperature,
+      maxTokens: previewMaxTokens,
+    );
+    previewSw.stop();
+
+    if (!previewResponse.isSuccess) {
+      throw StateError(previewResponse.errorMessage ?? 'Preview inference failed');
+    }
+
+    var extractUser =
+        '${extractionPrompt.trim()}\n\n--- Extracted document text (OCR) ---\n'
+        '$extractedText\n\n'
+        '--- Notice preview pass (raw model output from first pass; may contain errors) ---\n'
+        '${previewResponse.rawText}';
+
+    var extractFull = extractUser.contains('<start_of_turn>')
+        ? extractUser
+        : '<start_of_turn>user\n$extractUser\n<end_of_turn>\n<start_of_turn>model\n';
+    extractFull = _clampPromptForLocalLlm(extractFull);
+
+    final extractSw = Stopwatch()..start();
+    final extractResponse = await _localClient.chat(
+      prompt: extractFull,
+      temperature: temperature,
+      maxTokens: maxTokens,
+    );
+    extractSw.stop();
+
+    if (!extractResponse.isSuccess) {
+      throw StateError(
+        extractResponse.errorMessage ?? 'Extraction inference failed',
+      );
+    }
+
+    return InferRawNoticePreviewResult(
+      rawText: extractResponse.rawText,
+      previewElapsedMs: previewSw.elapsedMilliseconds,
+      extractElapsedMs: extractSw.elapsedMilliseconds,
+    );
+  }
+
   void dispose() {
     _localClient.dispose();
     _ocrService.dispose();
     _modelManager.dispose();
     _state = InferenceServiceState.uninitialized;
   }
+}
+
+/// Eval harness: timing split for notice-preview + extraction (two LLM calls).
+class InferRawNoticePreviewResult {
+  const InferRawNoticePreviewResult({
+    required this.rawText,
+    required this.previewElapsedMs,
+    required this.extractElapsedMs,
+  });
+
+  final String rawText;
+  final int previewElapsedMs;
+  final int extractElapsedMs;
+
+  int get totalElapsedMs => previewElapsedMs + extractElapsedMs;
 }
 
 void _inferenceDiag(String line) {

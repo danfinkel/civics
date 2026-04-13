@@ -92,6 +92,23 @@ class TrackAController {
     return result.data!;
   }
 
+  /// Background read of the notice for step-2 hints; returns null on any failure.
+  Future<TrackANoticePreview?> prefetchNoticePreview() async {
+    if (notice == null) return null;
+
+    if (!_service.isReady) {
+      final ok = await initializeService();
+      if (!ok) return null;
+    }
+
+    final result = await _service.analyzeTrackANoticePreview(
+      noticeBytes: notice!.imageBytes,
+    );
+
+    if (!result.isSuccess || result.data == null) return null;
+    return result.data;
+  }
+
   void dispose() {
     _service.dispose();
   }

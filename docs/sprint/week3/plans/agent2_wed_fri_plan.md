@@ -158,7 +158,16 @@ Log memory and inference count. Plot latency vs run number — curve shape tells
 
 **Create summary for Agent 4:**
 
-Create `research/eval/summary_for_agent4.md`:
+Do **not** hand-edit a markdown file. From `research/eval`, after JSONLs exist:
+
+```bash
+python3 generate_agent4_summary.py results/<your>.jsonl ... -o summary_for_agent4.md --device "…"
+```
+
+See **`research/eval/README.md`** (Playbook §5). The generator overwrites `-o` with computed metrics and per-file breakdowns.
+
+<details>
+<summary>Legacy hand-written outline (optional)</summary>
 
 ```markdown
 # Eval Results Summary for Kaggle Writeup
@@ -177,10 +186,7 @@ Create `research/eval/summary_for_agent4.md`:
 
 ## Token Budget Tradeoff
 - 70 tokens: X% accuracy, X,XXXms latency
-- 140 tokens: X% accuracy, X,XXXms latency
-- 280 tokens: X% accuracy, X,XXXms latency
-- 560 tokens: X% accuracy, X,XXXms latency (recommended)
-- 1120 tokens: X% accuracy, X,XXXms latency
+- …
 
 ## Key Findings for Writeup
 1. [Finding 1]
@@ -190,6 +196,8 @@ Create `research/eval/summary_for_agent4.md`:
 ## Raw Data
 All results in `research/eval/results/*.jsonl`
 ```
+
+</details>
 
 ---
 

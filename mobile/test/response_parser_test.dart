@@ -246,5 +246,27 @@ action_summary:Next steps for the resident here.
         expect(result.data!.noticeSummary.isUncertain, true);
       },
     );
+
+    test('parseTrackANoticePreview: valid flat JSON', () {
+      const json = '''
+{"requested_categories":["earned_income","residency"],"deadline":"April 1","hint":"Upload pay stubs."}
+''';
+
+      final result = ResponseParser.parseTrackANoticePreview(json);
+      expect(result.isSuccess, true, reason: result.errorMessage);
+      expect(result.data!.requestedCategories.length, 2);
+      expect(result.data!.deadline, 'April 1');
+      expect(result.data!.hint, 'Upload pay stubs.');
+    });
+
+    test('parseTrackANoticePreview: markdown fence', () {
+      const json = '''```json
+{"requested_categories":[],"deadline":"","hint":""}
+```''';
+
+      final result = ResponseParser.parseTrackANoticePreview(json);
+      expect(result.isSuccess, true, reason: result.errorMessage);
+      expect(result.data!.hasAnySignal, false);
+    });
   });
 }

@@ -89,6 +89,18 @@ class PromptTemplates {
         'notice body is illegible — if unclear, use "".';
   }
 
+  /// Minimal Track A prompt: single notice OCR → categories + deadline + hint (step 2 UI).
+  static String trackANoticePreviewOnly() {
+    return 'You read ONE government benefit notice (SNAP verification-style). '
+        'Only OCR text follows; it may have errors.\n\n'
+        'Return ONLY valid JSON (no markdown), one object:\n'
+        '{"requested_categories":["short labels e.g. Earned Income, Proof of Residency"],'
+        '"deadline":"verbatim due date or submit-by phrase from the notice, or empty string",'
+        '"hint":"one short sentence for the resident about what to upload next"}\n\n'
+        'Use [] and "" when unknown. Do not invent dates. Never use bracket placeholders '
+        'like [date]. Keep hint under 120 characters. Reply with only the JSON.';
+  }
+
   /// Track B: BPS Enrollment Packet Checker
   static String trackB({required List<String> documentLabels}) {
     final documentList = documentLabels
