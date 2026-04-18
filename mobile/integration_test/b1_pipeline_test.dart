@@ -137,14 +137,29 @@ void main() {
       expect(result.isSuccess, isTrue, reason: 'Pipeline failed: ${result.errorMessage}');
 
       final trackBResult = result.data!;
-      print('\nRequirements satisfied: ${trackBResult.satisfiedCount}');
+      print('\nRequirements satisfied (display): ${trackBResult.satisfiedCount}');
+      print(
+        'Requirements satisfied (raw model): ${trackBResult.satisfiedCountRaw}',
+      );
       print('Total requirements: ${trackBResult.requirements.length}');
 
-      // B1 should have 4 satisfied requirements
-      expect(trackBResult.satisfiedCount, equals(4),
-          reason: 'Expected 4 satisfied requirements for B1');
       expect(trackBResult.requirements.length, greaterThanOrEqualTo(4),
           reason: 'Expected at least 4 requirements');
+
+      expect(
+        trackBResult.satisfiedCount,
+        equals(trackBResult.satisfiedCountRaw),
+        reason: 'Display count matches per-row model status',
+      );
+      final anyQuestionable = trackBResult.requirements
+          .any((r) => r.status == RequirementStatus.questionable);
+      if (!anyQuestionable) {
+        expect(
+          trackBResult.satisfiedCount,
+          equals(4),
+          reason: 'Expected 4 satisfied when model returns no questionable rows',
+        );
+      }
 
       // Print detailed results
       print('\n=== B1 Pipeline Results ===');

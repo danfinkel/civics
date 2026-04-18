@@ -18,7 +18,8 @@ class CrystalStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -35,16 +36,23 @@ class CrystalStatusBadge extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: statusColor),
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 16, color: statusColor),
+          ),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: PrismTypography.publicSans(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: statusColor,
+          Expanded(
+            child: Text(
+              label,
+              style: PrismTypography.publicSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: statusColor,
+                height: 1.35,
+              ),
+              softWrap: true,
             ),
           ),
         ],

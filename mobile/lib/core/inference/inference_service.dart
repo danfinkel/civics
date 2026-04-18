@@ -16,6 +16,7 @@ import '../models/track_a_notice_preview.dart';
 import '../models/track_a_result.dart';
 import '../models/track_b_result.dart';
 import '../utils/eval_mode.dart';
+import '../utils/label_formatter.dart';
 
 /// Result of an inference operation
 class InferenceResult<T> {
@@ -178,22 +179,56 @@ class InferenceService {
 
     ocrStopwatch.stop();
 
+    if (kInferenceDiagnostics) {
+      _inferenceDiag(
+        '[TrackB][ocr] docs=${documents.length} ms=${ocrStopwatch.elapsedMilliseconds}',
+      );
+      for (var i = 0; i < documents.length; i++) {
+        final t = ocrResults[i] ?? '';
+        _inferenceDiag(
+          '[TrackB][ocr] doc=$i len=${t.length} trim=${t.trim().length} '
+          'preview=${_inferenceOneLinePreview(t)}',
+        );
+      }
+      final slotDescs = documentDescriptions;
+      if (slotDescs != null && slotDescs.isNotEmpty) {
+        for (var s = 0; s < slotDescs.length; s++) {
+          _inferenceDiag(
+            '[TrackB][slot] $s: ${_inferenceOneLinePreview(slotDescs[s], max: 200)}',
+          );
+        }
+      }
+    }
+
     final hasAnyText = ocrResults.values.any((text) => text.isNotEmpty);
     if (!hasAnyText) {
+      if (kInferenceDiagnostics) {
+        _inferenceDiag('[TrackB] failure: no OCR text from any document');
+      }
       return InferenceResult.failure(
         errorMessage: 'Could not extract text from documents',
         elapsed: totalStopwatch.elapsed,
       );
     }
 
-    // Step 2: Build prompt
-    final extractedText = _formatOcrResults(ocrResults, documentDescriptions);
+    // Step 2: Build prompt (fair per-doc budget so the last upload—often immunization—
+    // is not dropped when earlier residency OCR is long).
+    final extractedText =
+        _formatOcrResultsForTrackB(ocrResults, documentDescriptions);
     var prompt = _buildTextOnlyPrompt(
       track: 'b',
       extractedText: extractedText,
       documentCount: documents.length,
     );
+    final promptBeforeClamp = prompt;
     prompt = _clampPromptForLocalLlm(prompt);
+    if (kInferenceDiagnostics) {
+      _inferenceDiag(
+        '[TrackB][prompt] formattedOcrLen=${extractedText.length} '
+        'beforeClamp=${promptBeforeClamp.length} afterClamp=${prompt.length} '
+        'clamped=${prompt.length < promptBeforeClamp.length}',
+      );
+    }
 
     // Step 3: LLM inference with progress
     onLlmProgress?.call(0.0, phase: 'Starting…');
@@ -209,16 +244,38 @@ class InferenceService {
     totalStopwatch.stop();
 
     if (!response.isSuccess) {
+      if (kInferenceDiagnostics) {
+        _inferenceDiag(
+          '[TrackB][llm] success=false err=${response.errorMessage}',
+        );
+      }
       return InferenceResult.failure(
         errorMessage: response.errorMessage ?? 'Inference failed',
         elapsed: totalStopwatch.elapsed,
       );
     }
 
+    if (kInferenceDiagnostics) {
+      final raw = response.rawText;
+      _inferenceDiag(
+        '[TrackB][llm] success=true ms=${llmStopwatch.elapsedMilliseconds} '
+        'rawLen=${raw.length}',
+      );
+      _inferenceDiag('[TrackB][llm.raw] ${_inferenceOneLinePreview(raw, max: 2000)}');
+    }
+
     // Step 4: Parse response
     final parseResult = ResponseParser.parseTrackB(response.rawText);
 
     if (!parseResult.isSuccess || parseResult.data == null) {
+      if (kInferenceDiagnostics) {
+        _inferenceDiag(
+          '[TrackB][parse] ok=false err=${parseResult.errorMessage}',
+        );
+        _inferenceDiag(
+          '[TrackB][parse.raw] ${_inferenceOneLinePreview(response.rawText, max: 2000)}',
+        );
+      }
       return InferenceResult.failure(
         errorMessage: parseResult.errorMessage ?? 'Failed to parse response',
         elapsed: totalStopwatch.elapsed,
@@ -226,8 +283,47 @@ class InferenceService {
       );
     }
 
+    if (kInferenceDiagnostics) {
+      final rawModel = parseResult.data!;
+      _inferenceDiag(
+        '[TrackB][parse] ok=true modelRows=${rawModel.requirements.length} '
+        'duplicate=${rawModel.duplicateCategoryFlag}',
+      );
+      _trackBDiagDump('model', rawModel);
+    }
+
+    var data = parseResult.data!;
+    final slots = documentDescriptions;
+    if (slots != null && slots.isNotEmpty) {
+      if (kInferenceDiagnostics) {
+        final nModel = data.requirements.length;
+        final nSlots = slots.length;
+        final strategy = nModel == nSlots
+            ? 'positional_rekey (model rows == upload slots; order preserved)'
+            : 'bucket_pool+rekey (model rows=$nModel slots=$nSlots)';
+        _inferenceDiag('[TrackB][align] $strategy');
+      }
+      data = TrackBResult.alignToUploadSlots(
+        data,
+        slotDescriptions: slots,
+      );
+      data = data.withResidencyProof2QuestionableWhenDuplicateCategory();
+      if (kInferenceDiagnostics) {
+        _trackBDiagDump('aligned', data);
+        if (data.familySummary.trim().isNotEmpty) {
+          _inferenceDiag(
+            '[TrackB][family_summary] ${_inferenceOneLinePreview(data.familySummary, max: 500)}',
+          );
+        }
+      }
+    } else if (kInferenceDiagnostics) {
+      _inferenceDiag(
+        '[TrackB][align] skipped (no slot descriptions); using raw model rows',
+      );
+    }
+
     return InferenceResult.success(
-      data: parseResult.data!,
+      data: data,
       elapsed: totalStopwatch.elapsed,
       rawResponse: response.rawText,
     );
@@ -273,39 +369,33 @@ class InferenceService {
     return buffer.toString();
   }
 
-  /// Per-section and total caps (tight: paired with [_clampPromptForLocalLlm]).
-  String _formatOcrResults(
+  /// Splits OCR budget evenly across uploads so later documents are always included
+  /// (the generic formatter could exhaust [maxTotalChars] on long leases and omit imm).
+  String _formatOcrResultsForTrackB(
     Map<int, String> results,
     List<String>? descriptions, {
-    int maxCharsPerSection = 800,
-    int maxTotalChars = 2400,
+    int maxTotalChars = 4000,
   }) {
+    final indices = results.keys.toList()..sort();
+    final n = indices.length;
+    if (n == 0) return '';
+    const headerOverhead = 52;
+    final usable = maxTotalChars - n * headerOverhead - 24;
+    final perDoc = (usable ~/ n).clamp(360, 900);
     final buffer = StringBuffer();
-    var total = 0;
-    for (var i = 0; i < results.length; i++) {
+    for (var k = 0; k < n; k++) {
+      final i = indices[k];
       final desc = descriptions != null && i < descriptions.length
           ? descriptions[i]
           : 'Document ${i + 1}';
       var body = results[i] ?? '';
-      if (body.length > maxCharsPerSection) {
+      if (body.length > perDoc) {
         body =
-            '${body.substring(0, maxCharsPerSection)}\n[... text truncated for model limits ...]';
+            '${body.substring(0, perDoc)}\n[... text truncated for model limits ...]';
       }
-      final header = '--- $desc ---\n';
-      final section = '$header$body\n\n';
-      if (total + section.length > maxTotalChars) {
-        final remaining = maxTotalChars - total - header.length;
-        if (remaining > 200) {
-          buffer.write(header);
-          buffer.writeln(body.substring(0, remaining.clamp(0, body.length)));
-          buffer.writeln('[... document truncated; later pages omitted ...]');
-        }
-        break;
-      }
-      buffer.write(section);
-      total += section.length;
+      buffer.write('--- $desc ---\n$body\n\n');
     }
-    return buffer.toString();
+    return buffer.toString().trim();
   }
 
   /// Hard cap final prompt length; preserves Gemma turn markers and instruction head.
@@ -342,7 +432,9 @@ class InferenceService {
           'BPS registration packet check. Requirements: child age proof (birth cert/passport); '
           'TWO Boston residency proofs from different categories (lease/deed, utility, bank stmt, '
           'gov mail, employer letter, affidavit); immunization record. Two docs same category = '
-          'only one proof — set duplicate_category_flag true.\n\n'
+          'only one proof — set duplicate_category_flag true.\n'
+          'Each "--- … ---" OCR block is one uploaded document in upload order (1st block = 1st '
+          'photo, etc.). Read the immunization/vaccination block when judging that requirement.\n\n'
           'OCR from $documentCount document(s) (may have errors):\n\n'
           '$extractedText\n\n'
           'Return ONLY valid JSON (no markdown). '
@@ -414,8 +506,10 @@ class InferenceService {
     ];
     final extractedText = _formatOcrResultsTrackA(ocrResults, descriptions);
 
-    final preamble =
-        PromptTemplates.trackAOcrOnly(documentLabels: supportingDocumentLabels);
+    final preamble = PromptTemplates.trackAOcrOnly(
+      documentLabels: supportingDocumentLabels,
+      uploadedSupportingCount: supportingDocumentLabels.length,
+    );
     final userBlock = '$preamble\n\n'
         'IMPORTANT: No images are attached. Base your analysis only on this '
         'OCR output (errors and gaps are possible).\n'
@@ -495,8 +589,27 @@ class InferenceService {
       );
     }
 
+    final parsed = parseResult.data!;
+    final clamped =
+        parsed.withProofPackClampedToUploadedSlots(supportingDocumentLabels);
+    final data = identical(parsed, clamped)
+        ? clamped
+        : TrackAResult(
+            noticeSummary: clamped.noticeSummary,
+            proofPack: clamped.proofPack,
+            actionSummary:
+                LabelFormatter.synthesizeTrackAActionSummary(clamped),
+          );
+    if (kInferenceDiagnostics && !identical(parsed, clamped)) {
+      _inferenceDiag(
+        '[TrackA][clamp] proof_pack rows tied to non-uploaded document slots '
+        'were coerced to missing (maxSlot='
+        '${TrackAResult.maxUploadedDocumentSlot(supportingDocumentLabels)})',
+      );
+    }
+
     return InferenceResult.success(
-      data: parseResult.data!,
+      data: data,
       elapsed: totalStopwatch.elapsed,
       rawResponse: response.rawText,
     );
@@ -758,6 +871,52 @@ class InferRawNoticePreviewResult {
 void _inferenceDiag(String line) {
   if (kInferenceDiagnostics) {
     debugPrint(line);
+  }
+}
+
+/// Per-requirement dump for Track B when [kInferenceDiagnostics] is on.
+void _trackBDiagDump(String phase, TrackBResult r) {
+  if (!kInferenceDiagnostics) return;
+  if (r.duplicateCategoryFlag) {
+    _inferenceDiag(
+      '[TrackB][$phase] duplicate_category_flag=true '
+      'explanation=${_inferenceOneLinePreview(r.duplicateCategoryExplanation, max: 360)}',
+    );
+  }
+  for (var i = 0; i < r.requirements.length; i++) {
+    final row = r.requirements[i];
+    _inferenceDiag(
+      '[TrackB][$phase] #$i req=${_inferenceOneLinePreview(row.requirement, max: 100)} '
+      'status=${row.status.name} conf=${row.confidence.name} '
+      'matched=${_inferenceOneLinePreview(row.matchedDocument, max: 180)}',
+    );
+    if (row.evidence.trim().isNotEmpty) {
+      _inferenceDiag(
+        '[TrackB][$phase] #$i evidence=${_inferenceOneLinePreview(row.evidence, max: 450)}',
+      );
+    }
+    if (row.notes.trim().isNotEmpty) {
+      _inferenceDiag(
+        '[TrackB][$phase] #$i notes=${_inferenceOneLinePreview(row.notes, max: 280)}',
+      );
+    }
+    if (row.status != RequirementStatus.satisfied) {
+      final ev = row.evidence.trim();
+      final no = row.notes.trim();
+      final hasModelReason = ev.isNotEmpty || no.isNotEmpty;
+      final isBareMissing = row.status == RequirementStatus.missing &&
+          row.matchedDocument.trim().toUpperCase() == 'MISSING' &&
+          !hasModelReason;
+      final hint = hasModelReason
+          ? '(see evidence/notes above)'
+          : isBareMissing
+              ? '(gap: no model row for this upload slot after echo-strip / '
+                  'pool alignment—or explicit missing with no notes)'
+              : '(model marked ${row.status.name} but left evidence+notes empty)';
+      _inferenceDiag(
+        '[TrackB][why_not_satisfied] #$i status=${row.status.name} $hint',
+      );
+    }
   }
 }
 

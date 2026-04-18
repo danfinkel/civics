@@ -132,6 +132,78 @@ class TrackAResult {
     required this.actionSummary,
   });
 
+  /// Highest `N` in labels like `Document N` from the upload UI (one image per label).
+  static int maxUploadedDocumentSlot(List<String> supportingDocumentLabels) {
+    var maxN = 0;
+    for (final label in supportingDocumentLabels) {
+      final m = RegExp(r'document\s*(\d+)', caseSensitive: false).firstMatch(label);
+      if (m != null) {
+        final n = int.tryParse(m.group(1)!) ?? 0;
+        if (n > maxN) maxN = n;
+      }
+    }
+    if (maxN == 0) return supportingDocumentLabels.length;
+    return maxN;
+  }
+
+  /// True if [text] references `Document K` for any `K` greater than [maxSlot].
+  static bool referencesDocumentSlotAbove(String text, int maxSlot) {
+    if (maxSlot <= 0) return false;
+    for (final m
+        in RegExp(r'\bdocument\s*(\d+)\b', caseSensitive: false).allMatches(text)) {
+      final n = int.tryParse(m.group(1)!) ?? 0;
+      if (n > maxSlot) return true;
+    }
+    return false;
+  }
+
+  /// Drops hallucinated ties to non-uploaded slots (e.g. "Document 2" when only
+  /// one supporting photo was sent). Rows are turned into [AssessmentLabel.missing]
+  /// with [matchedDocument] `MISSING` so the UI matches what the resident uploaded.
+  TrackAResult withProofPackClampedToUploadedSlots(
+    List<String> supportingDocumentLabels,
+  ) {
+    if (supportingDocumentLabels.isEmpty) return this;
+    final maxSlot = maxUploadedDocumentSlot(supportingDocumentLabels);
+    if (maxSlot <= 0) return this;
+
+    var changed = false;
+    final adjusted = <ProofPackItem>[];
+    for (final item in proofPack) {
+      final blob = '${item.matchedDocument}\n${item.evidence}';
+      if (!referencesDocumentSlotAbove(blob, maxSlot)) {
+        adjusted.add(item);
+        continue;
+      }
+      changed = true;
+      const caveat =
+          'Adjusted on-device: this line referred to a document slot you did not '
+          'upload (for example Document 2 with only one supporting photo).';
+      adjusted.add(
+        ProofPackItem(
+          category: item.category,
+          matchedDocument: 'MISSING',
+          assessment: AssessmentLabel.missing,
+          confidence: ConfidenceLevel.uncertain,
+          evidence: '',
+          caveats: item.caveats.trim().isEmpty
+              ? caveat
+              : '${item.caveats.trim()}\n\n$caveat',
+        ),
+      );
+    }
+
+    if (!changed) return this;
+
+    // Caller should refresh [actionSummary] via [LabelFormatter.synthesizeTrackAActionSummary]
+    // when the proof pack changes (avoids importing LabelFormatter here — it imports this file).
+    return TrackAResult(
+      noticeSummary: noticeSummary,
+      proofPack: adjusted,
+      actionSummary: actionSummary,
+    );
+  }
+
   factory TrackAResult.fromJson(Map<String, dynamic> json) {
     return TrackAResult(
       noticeSummary: NoticeSummary.fromJson(json['notice_summary'] ?? {}),

@@ -28,7 +28,7 @@ class RequirementRow extends StatelessWidget {
         return '${oneLine.substring(0, 100).trim()}…';
       }
     }
-    return requirement.matchedDocument;
+    return trackBMatchedDocumentSubtitle(requirement);
   }
 
   @override
@@ -53,31 +53,35 @@ class RequirementRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            LabelFormatter.requirementLabel(
-                              requirement.requirement,
-                            ),
-                            style: PrismTypography.spaceGrotesk(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (requirement.status == RequirementStatus.satisfied)
-                          _SatisfiedChip()
-                        else
-                          CrystalStatusBadge(
-                            statusColor: statusColor,
-                            icon: _getStatusIcon(),
-                            label: statusText,
-                          ),
-                      ],
+                    // Title on its own line so long status badges cannot steal
+                    // horizontal space (Row+Expanded was collapsing title to ~0px).
+                    Text(
+                      trackBRequirementResidentTitle(requirement),
+                      style: PrismTypography.spaceGrotesk(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                    const SizedBox(height: 8),
+                    if (requirement.status == RequirementStatus.satisfied)
+                      _SatisfiedChip()
+                    else
+                      CrystalStatusBadge(
+                        statusColor: statusColor,
+                        icon: _getStatusIcon(),
+                        label: statusText,
+                      ),
+                    if (requirement.status ==
+                        RequirementStatus.questionable) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        trackBQuestionableResidentExplanation(requirement),
+                        style: theme.bodySmall?.copyWith(
+                          color: AppColors.neutral,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Text(
                       subtitle,

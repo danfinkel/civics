@@ -591,23 +591,27 @@ class _TrackAScreenState extends State<TrackAScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: doc != null ? AppColors.success : AppColors.outline,
+                    color: doc != null
+                        ? AppColors.primary.withValues(alpha: 0.45)
+                        : AppColors.outline,
                   ),
-                  color: doc != null ? AppColors.lightGreen : Colors.transparent,
+                  color: doc != null
+                      ? AppColors.primary.withValues(alpha: 0.12)
+                      : Colors.transparent,
                 ),
                 child: Center(
                   child: doc != null
                       ? const Icon(
-                          Icons.check,
+                          Icons.add_photo_alternate_outlined,
                           size: 16,
-                          color: AppColors.success,
+                          color: AppColors.primary,
                         )
                       : Text(
                           '$slotNumber',
                           style: PrismTypography.spaceGrotesk(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: doc != null ? AppColors.success : AppColors.primary,
+                            color: AppColors.primary,
                           ),
                         ),
                 ),
@@ -670,19 +674,33 @@ class _TrackAScreenState extends State<TrackAScreen> {
                     ],
                   )
                 else
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: AppColors.success,
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Photo added',
+                            style: PrismTypography.publicSans(
+                              fontSize: 14,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        'Ready',
+                        'Not reviewed yet',
                         style: PrismTypography.publicSans(
-                          fontSize: 14,
-                          color: AppColors.success,
+                          fontSize: 12,
+                          color: AppColors.neutral,
                         ),
                       ),
                     ],

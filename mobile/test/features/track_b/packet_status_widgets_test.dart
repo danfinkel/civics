@@ -69,6 +69,7 @@ void main() {
 
       expect(find.text('REVIEW NEEDED'), findsOneWidget);
       expect(find.text('APPLICATION VERIFIED'), findsNothing);
+      expect(find.byIcon(Icons.priority_high_rounded), findsOneWidget);
     });
 
     testWidgets('shows PACKET STATUS when there are zero requirements',
@@ -107,7 +108,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Needs verification'), findsOneWidget);
+      expect(find.text('Checklist'), findsOneWidget);
       expect(find.text('1 of 2 requirements satisfied'), findsOneWidget);
       expect(find.textContaining('2:30 PM'), findsOneWidget);
     });

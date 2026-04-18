@@ -53,16 +53,45 @@ class PromptTemplates {
   }
 
   /// Shorter Track A prompt for OCR-only pipeline (keeps prompt under llama nBatch).
-  static String trackAOcrOnly({required List<String> documentLabels}) {
+  ///
+  /// [uploadedSupportingCount] must match how many supporting images were sent
+  /// (excluding the notice) so the model does not invent extra uploads.
+  static String trackAOcrOnly({
+    required List<String> documentLabels,
+    required int uploadedSupportingCount,
+  }) {
     final list = documentLabels
         .asMap()
         .entries
         .map((e) => '${e.key + 1}. ${e.value}')
         .join('\n');
 
+    final countGuard = uploadedSupportingCount <= 0
+        ? ''
+        : '\n\nUPLOAD COUNT: The resident attached exactly $uploadedSupportingCount '
+            'supporting photo(s) (not counting the government notice). The OCR below '
+            'includes one --- … --- section per supporting photo (see headers after the '
+            'government notice). Do not describe, summarize, or cite text as coming from '
+            'an extra supporting photo they did not upload (for example, never reference '
+            'Document ${uploadedSupportingCount + 1} or imply two household uploads when '
+            'only one supporting image exists). If the notice asks for more proofs than '
+            'they uploaded, use missing or uncertain for those categories — do not invent '
+            'another household document.\n';
+
+    final proofPackSlotRule = uploadedSupportingCount == 1
+        ? '\n\nPROOF_PACK SLOT RULE: Only one supporting OCR block exists. In every '
+            '`proof_pack` row, `matched_document` and `evidence` must never name '
+            '`Document 2`, a second pay stub, a second upload, or any document slot '
+            'beyond Document 1. Categories not clearly evidenced by that single OCR '
+            'must use `assessment` missing and `matched_document` MISSING — not a '
+            'second satisfied row tied to a fictitious document.\n'
+        : '';
+
     return 'You help a resident with a government benefit notice and proof '
         'documents (e.g. SNAP verification). Only OCR text is below; it may '
         'contain errors.\n\n'
+        '$countGuard'
+        '$proofPackSlotRule'
         'Supporting docs (labels):\n$list\n\n'
         'Steps: (1) Read the notice — requested proof categories, deadline, '
         'consequence. (2) Map each document to a category; use likely_satisfies / '

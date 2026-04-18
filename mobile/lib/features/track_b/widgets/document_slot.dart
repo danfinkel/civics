@@ -47,6 +47,7 @@ class _DocumentSlotState extends State<DocumentSlot> {
               PrismSlotStep(
                 stepNumber: widget.index + 1,
                 complete: isFilled,
+                completeUsesSuccessGreen: false,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -125,7 +126,7 @@ class _DocumentSlotState extends State<DocumentSlot> {
     );
   }
 
-  /// Design spec: 48×48 thumbnail, check overlay when verified; blur + retake when unclear.
+  /// Design spec: 48×48 thumbnail, small “captured” badge when added; blur + retake when unclear.
   Widget _buildDocumentPreview(BuildContext context, CapturedDocument doc) {
     final hasBlurWarning = doc.shouldWarnBlur;
     const thumb = 48.0;
@@ -189,10 +190,13 @@ class _DocumentSlotState extends State<DocumentSlot> {
                   child: Container(
                     width: 22,
                     height: 22,
-                    decoration: const BoxDecoration(
-                      color: AppColors.lightGreen,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
-                      boxShadow: [
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.45),
+                      ),
+                      boxShadow: const [
                         BoxShadow(
                           color: Color(0x33000000),
                           blurRadius: 2,
@@ -200,9 +204,9 @@ class _DocumentSlotState extends State<DocumentSlot> {
                       ],
                     ),
                     child: const Icon(
-                      Icons.check_circle,
-                      size: 18,
-                      color: AppColors.success,
+                      Icons.add_photo_alternate_outlined,
+                      size: 14,
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
@@ -250,15 +254,15 @@ class _DocumentSlotState extends State<DocumentSlot> {
                 ),
               ] else ...[
                 Text(
-                  'Document Verified',
+                  'Photo added',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.success,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w600,
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Ready for analysis',
+                  'Not reviewed yet — tap Check My Packet to run on-device analysis.',
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
               ],

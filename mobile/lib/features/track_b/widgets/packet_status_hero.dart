@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import '../../../core/models/track_b_result.dart';
+import '../../../shared/theme/app_theme.dart';
 import '../../../shared/theme/prism_tokens.dart';
 
 /// Prism results hero — Stitch “BPS Registration Center” / packet status header.
@@ -16,6 +17,7 @@ class PacketStatusHero extends StatelessWidget {
     final total = result.requirements.length;
     final ok = result.satisfiedCount;
     final allSatisfied = total > 0 && ok == total;
+    final needsReview = total > 0 && !allSatisfied;
 
     final pill = switch ((total, allSatisfied)) {
       (_, true) => 'APPLICATION VERIFIED',
@@ -58,23 +60,52 @@ class PacketStatusHero extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 4,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: needsReview
+                          ? AppColors.warning
+                          : Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.35),
+                        color: needsReview
+                            ? const Color(0xFFB45309)
+                            : Colors.white.withValues(alpha: 0.35),
+                        width: needsReview ? 2 : 1,
                       ),
+                      boxShadow: needsReview
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.22),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
-                    child: Text(
-                      pill,
-                      style: tt.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: Colors.white,
-                        fontSize: 10,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (needsReview) ...[
+                          const Icon(
+                            Icons.priority_high_rounded,
+                            size: 15,
+                            color: Color(0xFF422006),
+                          ),
+                          const SizedBox(width: 5),
+                        ],
+                        Text(
+                          pill,
+                          style: tt.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.7,
+                            color: needsReview
+                                ? const Color(0xFF422006)
+                                : Colors.white,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 14),

@@ -9,10 +9,14 @@ class PrismSlotStep extends StatelessWidget {
   final int stepNumber;
   final bool complete;
 
+  /// When [complete], use success green (validated) vs primary (slot has a photo only).
+  final bool completeUsesSuccessGreen;
+
   const PrismSlotStep({
     super.key,
     required this.stepNumber,
     required this.complete,
+    this.completeUsesSuccessGreen = true,
   });
 
   @override
@@ -33,14 +37,20 @@ class PrismSlotStep extends StatelessWidget {
         child: complete
             ? CustomPaint(
                 key: const ValueKey('done'),
-                painter: _HexPrismPainter(filled: true),
+                painter: _HexPrismPainter(
+                  filled: true,
+                  useSuccessPalette: completeUsesSuccessGreen,
+                ),
                 child: const Center(
                   child: Icon(Icons.check_rounded, size: 18, color: Colors.white),
                 ),
               )
             : CustomPaint(
                 key: ValueKey('open-$stepNumber'),
-                painter: _HexPrismPainter(filled: false),
+                painter: const _HexPrismPainter(
+                  filled: false,
+                  useSuccessPalette: true,
+                ),
                 child: Center(
                   child: Text(
                     '$stepNumber',
@@ -58,18 +68,29 @@ class PrismSlotStep extends StatelessWidget {
 
 class _HexPrismPainter extends CustomPainter {
   final bool filled;
+  final bool useSuccessPalette;
 
-  _HexPrismPainter({required this.filled});
+  const _HexPrismPainter({
+    required this.filled,
+    this.useSuccessPalette = true,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final path = _hexPath(size);
     if (filled) {
+      final hi = useSuccessPalette ? AppColors.success : AppColors.primary;
+      final lo = useSuccessPalette
+          ? AppColors.success.withValues(alpha: 0.65)
+          : AppColors.primary.withValues(alpha: 0.55);
+      final stroke = useSuccessPalette
+          ? AppColors.success.withValues(alpha: 0.9)
+          : AppColors.primary.withValues(alpha: 0.85);
       final paint = Paint()
         ..shader = LinearGradient(
           colors: [
-            AppColors.success.withValues(alpha: 0.95),
-            AppColors.success.withValues(alpha: 0.65),
+            hi.withValues(alpha: useSuccessPalette ? 0.95 : 0.9),
+            lo,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -80,7 +101,7 @@ class _HexPrismPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
-          ..color = AppColors.success.withValues(alpha: 0.9),
+          ..color = stroke,
       );
     } else {
       canvas.drawPath(
@@ -114,5 +135,6 @@ class _HexPrismPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _HexPrismPainter oldDelegate) =>
-      oldDelegate.filled != filled;
+      oldDelegate.filled != filled ||
+      oldDelegate.useSuccessPalette != useSuccessPalette;
 }

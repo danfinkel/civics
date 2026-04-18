@@ -184,12 +184,35 @@ class LabelFormatter {
     return buf.toString().trim();
   }
 
+  /// Shown as [RequirementResult.evidence] when duplicate-category rules demote
+  /// “Residency Proof 2” from satisfied → questionable.
+  static const String residencyProof2DuplicateCategoryEvidence =
+      'BPS counts two documents from the same residency category (for example, two '
+      'leases) as only one proof. This upload does not satisfy your second proof '
+      'until you add something from a different category (see the yellow note above).';
+
+  /// Concrete examples for the duplicate-residency banner (appended when missing).
+  static const String duplicateResidencySecondProofAlternatives =
+      'For a second Boston residency proof, bring something from a different category '
+      'than your lease—such as a recent utility bill, bank statement, official '
+      'government mail with your address, an employer letter on letterhead, or a '
+      'notarized residency affidavit. Ask BPS registration if you are unsure what '
+      'they will accept.';
+
+  static bool _duplicateMessageAlreadyListsAlternatives(String body) {
+    final l = body.toLowerCase();
+    return l.contains('utility bill') ||
+        l.contains('bank statement') ||
+        l.contains('notarized');
+  }
+
   /// Duplicate-banner explanation may be a raw enum-like string from the model.
   static String duplicateCategoryUserMessage(String? raw) {
     final t = raw?.trim() ?? '';
-    if (t.isEmpty) {
-      return '';
-    }
-    return assessmentLabel(t);
+    final body = t.isEmpty
+        ? assessmentLabel('same_residency_category_duplicate')
+        : assessmentLabel(t);
+    if (_duplicateMessageAlreadyListsAlternatives(body)) return body;
+    return '$body\n\n$duplicateResidencySecondProofAlternatives';
   }
 }

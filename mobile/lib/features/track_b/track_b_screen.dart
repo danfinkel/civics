@@ -163,17 +163,6 @@ class _TrackBScreenState extends State<TrackBScreen> {
     );
   }
 
-  String _nextStepsLead(String summary) {
-    const max = 220;
-    final t = summary.trim();
-    if (t.isEmpty) {
-      return 'Bring the documents from your checklist when you visit registration. '
-          'This review ran entirely on your device.';
-    }
-    if (t.length <= max) return t;
-    return '${t.substring(0, max).trim()}… See “What to bring” below for the full list.';
-  }
-
   Future<void> _copySummaryToClipboard(TrackBResult result) async {
     await Clipboard.setData(ClipboardData(text: result.toShareableText()));
     if (!mounted) return;
@@ -370,7 +359,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
 
   Widget _buildLoadingView() {
     final progress = _controller.progress;
-    final percent = (progress.percent * 100).round();
+    final percent = (progress.percent.clamp(0.0, 1.0) * 100).round();
 
     return Center(
       child: Padding(
@@ -402,7 +391,9 @@ class _TrackBScreenState extends State<TrackBScreen> {
                         width: 120,
                         height: 120,
                         child: CircularProgressIndicator(
-                          value: progress.percent > 0 ? progress.percent : null,
+                          value: progress.percent > 0
+                              ? progress.percent.clamp(0.0, 1.0)
+                              : null,
                           strokeWidth: 8,
                           backgroundColor: AppColors.surfaceContainer,
                           valueColor:
@@ -502,7 +493,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
                   ],
                 ),
               ),
-              ...result.requirements.map(
+              ...result.requirementsForDisplay.map(
                 (req) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: RequirementRow(requirement: req),
@@ -532,7 +523,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _nextStepsLead(result.familySummary),
+                      trackBNextStepsLead(result),
                       style: theme.bodyMedium?.copyWith(height: 1.45),
                     ),
                   ],
@@ -543,7 +534,7 @@ class _TrackBScreenState extends State<TrackBScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _PrismSummaryCard(
                   title: 'What to bring to registration',
-                  body: result.familySummary,
+                  body: result.displayFamilySummary,
                   theme: theme,
                 ),
               ),

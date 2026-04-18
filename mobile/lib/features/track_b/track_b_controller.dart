@@ -10,7 +10,7 @@ enum TrackBViewState {
   error,
 }
 
-/// Progress info for loading state
+/// Progress info for loading state ([percent] is always **0.0–1.0** overall).
 class AnalysisProgress {
   final String message;
   final double percent;
@@ -204,19 +204,22 @@ class TrackBController {
       documents: images,
       documentDescriptions: descriptions,
       onOcrProgress: (docIndex, totalDocs) {
-        final percent = (docIndex / totalDocs) * 30;
-        _updateProgress(
-          'Reading document ${docIndex + 1} of $totalDocs...',
-          percent,
-        );
+        final total = totalDocs > 0 ? totalDocs : 1;
+        // OCR phase uses first 30% of the overall bar (final callback uses docIndex == totalDocs).
+        final p = ((docIndex / total) * 0.3).clamp(0.0, 0.3);
+        final msg = docIndex >= totalDocs
+            ? 'Finished reading documents…'
+            : 'Reading document ${docIndex + 1} of $totalDocs...';
+        _updateProgress(msg, p);
       },
       onLlmProgress: (progress, {phase}) {
-        // progress is 0.0-1.0, map to 30-100%
-        final percent = 30 + (progress * 70);
+        // progress from llama is 0.0–1.0 within the LLM step; map to 30–100% of overall.
+        final llm = progress.clamp(0.0, 1.0);
+        final p = (0.3 + llm * 0.7).clamp(0.0, 1.0);
         final message = (phase != null && phase.isNotEmpty)
             ? phase
-            : (progress < 0.5 ? 'Analyzing documents...' : 'Almost done...');
-        _updateProgress(message, percent);
+            : (llm < 0.5 ? 'Analyzing documents...' : 'Almost done...');
+        _updateProgress(message, p);
       },
     );
 
