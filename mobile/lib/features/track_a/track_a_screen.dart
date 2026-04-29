@@ -18,6 +18,9 @@ class TrackAScreen extends StatefulWidget {
 
 class _TrackAScreenState extends State<TrackAScreen> {
   final TrackAController _controller = TrackAController();
+  /// Reuse one [ImagePicker] for government-notice flow — fresh instances each
+  /// tap are linked to iOS “first open” quirks and dropped dialogs in the field.
+  final DocumentCapture _noticeDocumentCapture = DocumentCapture();
   bool _isAnalyzing = false;
   TrackAResult? _result;
   bool _noticePreviewLoading = false;
@@ -35,15 +38,36 @@ class _TrackAScreenState extends State<TrackAScreen> {
     super.dispose();
   }
 
-  Future<void> _onNoticeCaptured(CapturedDocument doc) async {
+  void _onNoticeCaptured(CapturedDocument doc) {
     setState(() {
       _controller.setNotice(doc);
     });
 
-    if (doc.blurResult.isBlurry && mounted) {
-      _showBlurWarning(doc, isNotice: true);
-    }
+    // After the native image picker / camera, showing `AlertDialog` in the same
+    // turn as the first `setState` can be ignored on iOS. Defer to the next
+    // frame; keep [doc.id] in sync in case the user retakes quickly.
+    final capturedId = doc.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _presentNoticeAfterCapture(capturedId);
+    });
+  }
 
+  Future<void> _presentNoticeAfterCapture(String capturedId) async {
+    if (!mounted) return;
+    if (_controller.notice?.id != capturedId) return;
+
+    final doc = _controller.notice;
+    if (doc == null) return;
+
+    if (doc.shouldWarnFrame && mounted) {
+      await _showFrameGatesDialog(doc, isNotice: true);
+    }
+    if (!mounted || _controller.notice?.id != capturedId) return;
+
+    final notice = _controller.notice;
+    if (notice != null && notice.shouldWarnBlur && mounted) {
+      _showBlurWarning(notice, isNotice: true);
+    }
     _scheduleNoticePreview();
   }
 
@@ -77,6 +101,80 @@ class _TrackAScreenState extends State<TrackAScreen> {
     if (doc.blurResult.isBlurry && mounted) {
       _showBlurWarning(doc);
     }
+  }
+
+  Future<void> _showFrameGatesDialog(
+    CapturedDocument doc, {
+    required bool isNotice,
+  }) async {
+    final msg = doc.frameResult?.userMessage;
+    if (msg == null || !doc.shouldWarnFrame) return;
+
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Check How You Framed the Notice'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.crop_free,
+              color: AppColors.warning,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(msg),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                if (isNotice) {
+                  final n = _controller.notice;
+                  if (n != null) {
+                    _controller.setNotice(
+                      n.copyWith(acceptedDespiteFrameGates: true),
+                    );
+                  }
+                } else {
+                  final idx = _controller.supportingDocuments
+                      .indexWhere((d) => d?.id == doc.id);
+                  final d = idx >= 0 ? _controller.supportingDocuments[idx] : null;
+                  if (d != null) {
+                    _controller.setSupportingDocument(
+                      idx,
+                      d.copyWith(acceptedDespiteFrameGates: true),
+                    );
+                  }
+                }
+              });
+            },
+            child: const Text('Use Anyway'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                if (isNotice) {
+                  _controller.clearNotice();
+                  _noticePreview = null;
+                  _noticePreviewLoading = false;
+                } else {
+                  _controller.clearSupportingDocument(
+                    _controller.supportingDocuments.indexWhere(
+                      (d) => d?.id == doc.id,
+                    ),
+                  );
+                }
+              });
+            },
+            child: const Text('Retake'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showBlurWarning(CapturedDocument doc, {bool isNotice = false}) {
@@ -351,8 +449,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   icon: Icons.camera_alt,
                   label: 'Camera',
                   onTap: () async {
-                    final capture = DocumentCapture();
-                    final doc = await capture.captureFromCamera();
+                    final doc = await _noticeDocumentCapture.captureFromCamera(
+                      preScreenForGovernmentNotice: true,
+                    );
                     if (doc != null) _onNoticeCaptured(doc);
                   },
                 ),
@@ -363,8 +462,9 @@ class _TrackAScreenState extends State<TrackAScreen> {
                   icon: Icons.photo_library,
                   label: 'Photo library',
                   onTap: () async {
-                    final capture = DocumentCapture();
-                    final doc = await capture.pickFromGallery();
+                    final doc = await _noticeDocumentCapture.pickFromGallery(
+                      preScreenForGovernmentNotice: true,
+                    );
                     if (doc != null) _onNoticeCaptured(doc);
                   },
                 ),
@@ -413,6 +513,14 @@ class _TrackAScreenState extends State<TrackAScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (notice.shouldWarnFrame)
+                  Text(
+                    'Framing may affect results',
+                    style: PrismTypography.publicSans(
+                      fontSize: 12,
+                      color: AppColors.warning,
+                    ),
+                  ),
                 if (notice.shouldWarnBlur)
                   Text(
                     'Photo unclear — may affect results',

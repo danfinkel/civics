@@ -1,3 +1,4 @@
+import 'package:civiclens/core/utils/label_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:civiclens/core/models/track_a_result.dart';
@@ -80,6 +81,71 @@ void main() {
       );
       final out = r.withProofPackClampedToUploadedSlots(const ['Document 1']);
       expect(identical(r, out), isTrue);
+    });
+  });
+
+  group('TrackAResult proof pack deduplication by category', () {
+    const ns = NoticeSummary(
+      requestedCategories: <String>[],
+      deadline: '',
+      consequence: '',
+    );
+
+    ProofPackItem earnedSatisfied() => const ProofPackItem(
+          category: 'earned_income',
+          matchedDocument: 'Document 1',
+          assessment: AssessmentLabel.likelySatisfies,
+          confidence: ConfidenceLevel.high,
+          evidence: 'stub on doc 1',
+          caveats: '',
+        );
+
+    ProofPackItem earnedSpuriousMissing() => const ProofPackItem(
+          category: 'earned_income',
+          matchedDocument: 'MISSING',
+          assessment: AssessmentLabel.missing,
+          confidence: ConfidenceLevel.low,
+          evidence: '',
+          caveats: '',
+        );
+
+    test('keeps one row per category, preferring likely_satisfies over missing', () {
+      final r = TrackAResult(
+        noticeSummary: ns,
+        proofPack: [earnedSatisfied(), earnedSpuriousMissing()],
+        actionSummary: '',
+      );
+      expect(r.proofPackDeduplicatedByCategory, hasLength(1));
+      expect(
+        r.proofPackDeduplicatedByCategory.first.assessment,
+        AssessmentLabel.likelySatisfies,
+      );
+    });
+
+    test('same when satisfied row comes after duplicate missing', () {
+      final r = TrackAResult(
+        noticeSummary: ns,
+        proofPack: [earnedSpuriousMissing(), earnedSatisfied()],
+        actionSummary: '',
+      );
+      expect(r.proofPackDeduplicatedByCategory, hasLength(1));
+      expect(
+        r.proofPackDeduplicatedByCategory.first.assessment,
+        AssessmentLabel.likelySatisfies,
+      );
+    });
+
+    test('synthesizeTrackAActionSummary does not list category as missing', () {
+      final r = TrackAResult(
+        noticeSummary: ns,
+        proofPack: [earnedSatisfied(), earnedSpuriousMissing()],
+        actionSummary: '',
+      );
+      final s = LabelFormatter.synthesizeTrackAActionSummary(r);
+      expect(
+        s,
+        isNot(contains('Gather and submit the missing proof for:')),
+      );
     });
   });
 }

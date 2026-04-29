@@ -9,6 +9,7 @@ import base64
 import io
 import json
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -16,7 +17,7 @@ from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from inference import run_track_a, run_track_b
+from inference_backend import run_track_a, run_track_b
 
 app = FastAPI(
     title="CivicLens Cloud API",
@@ -54,8 +55,10 @@ class AnalyzeResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Health check response."""
+
     status: str
     version: str
+    timestamp: str
 
 
 def save_base64_to_temp(base64_string: str) -> Path:
@@ -72,8 +75,12 @@ def save_base64_to_temp(base64_string: str) -> Path:
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
-    """Health check endpoint."""
-    return HealthResponse(status="healthy", version="1.0.0")
+    """Health check endpoint (used by keep-warm and monitoring)."""
+    return HealthResponse(
+        status="ok",
+        version="1.0.0",
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
@@ -261,11 +268,56 @@ async def analyze_documents_form(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Mount Gradio app at root
+# Mount Gradio web demo at root (`demo.launch()` never runs here — uvicorn serves FastAPI).
 import gradio as gr
-from app import demo as gradio_demo
+from gradio.utils import get_theme as gradio_resolve_theme
 
-app = gr.mount_gradio_app(app, gradio_demo, path="/")
+from app import CUSTOM_CSS, civic_gradio_theme, demo as gradio_demo
+
+_theme = civic_gradio_theme()
+# Workaround Gradio ≥6 ordering bug in mount_gradio_app(): it calls blocks.get_config_file() BEFORE
+# applying theme/css, so `/config` and the SPA used to ship with default styling. Hydrate Blocks first,
+# regenerate config — then mount applies the same theme/css again (harmless duplicates).
+gradio_demo.theme = gradio_resolve_theme(_theme)
+gradio_demo.css = CUSTOM_CSS
+gradio_demo.js = gradio_demo.js or ""
+gradio_demo.head = gradio_demo.head or ""
+gradio_demo.head_paths = []
+gradio_demo.css_paths = []
+gradio_demo._set_html_css_theme_variables()
+gradio_demo.config = gradio_demo.get_config_file()
+
+
+@app.get("/debug/civic_style")
+def civic_style_debug():
+    """Verify custom theme/CSS landed in Blocks config (helps diagnose HF Space build/cache issues)."""
+    cfg = gradio_demo.config or {}
+    css = cfg.get("css") or ""
+    return {
+        "config_css_chars": len(css),
+        "theme_name": getattr(gradio_demo.theme, "name", None),
+        "theme_hash": getattr(gradio_demo, "theme_hash", None),
+        "theme_css_chars": len(getattr(gradio_demo, "theme_css", "") or ""),
+        "looks_like_civic_lens": ".civiclens-hero" in css and "#002444" in css,
+    }
+
+
+app = gr.mount_gradio_app(
+    app,
+    gradio_demo,
+    path="/",
+    theme=_theme,
+    css=CUSTOM_CSS,
+)
+
+# mount_gradio_app snapshots config mid-flight; refresh after hooks + transpile finalize.
+gradio_demo._set_html_css_theme_variables()
+gradio_demo.config = gradio_demo.get_config_file()
+
+print(
+    "[civic_lens] Mounted Gradio demo; config css chars:",
+    len((gradio_demo.config or {}).get("css") or ""),
+)
 
 
 if __name__ == "__main__":

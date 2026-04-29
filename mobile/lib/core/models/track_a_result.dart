@@ -121,6 +121,19 @@ class ProofPackItem {
   }
 }
 
+int _assessmentPriority(AssessmentLabel a) {
+  switch (a) {
+    case AssessmentLabel.likelySatisfies:
+      return 4;
+    case AssessmentLabel.uncertain:
+      return 3;
+    case AssessmentLabel.likelyDoesNotSatisfy:
+      return 2;
+    case AssessmentLabel.missing:
+      return 1;
+  }
+}
+
 class TrackAResult {
   final NoticeSummary noticeSummary;
   final List<ProofPackItem> proofPack;
@@ -131,6 +144,30 @@ class TrackAResult {
     required this.proofPack,
     required this.actionSummary,
   });
+
+  /// The model can emit two [ProofPackItem] rows for the same [ProofPackItem.category]
+  /// (e.g. one [AssessmentLabel.likelySatisfies] and a duplicate [AssessmentLabel.missing]).
+  /// The UI and the synthesized `actionSummary` (when the model omits it) use at most one row per
+  /// category, keeping the stronger [ProofPackItem.assessment].
+  List<ProofPackItem> get proofPackDeduplicatedByCategory {
+    if (proofPack.length <= 1) return proofPack;
+    final byKey = <String, ProofPackItem>{};
+    final orderKeys = <String>[];
+    for (var i = 0; i < proofPack.length; i++) {
+      final item = proofPack[i];
+      final key = item.category.isEmpty
+          ? '__empty__${i}'
+          : item.category.toLowerCase().trim();
+      final prev = byKey[key];
+      if (prev == null) {
+        byKey[key] = item;
+        orderKeys.add(key);
+      } else if (_assessmentPriority(item.assessment) > _assessmentPriority(prev.assessment)) {
+        byKey[key] = item;
+      }
+    }
+    return orderKeys.map((k) => byKey[k]!).toList();
+  }
 
   /// Highest `N` in labels like `Document N` from the upload UI (one image per label).
   static int maxUploadedDocumentSlot(List<String> supportingDocumentLabels) {

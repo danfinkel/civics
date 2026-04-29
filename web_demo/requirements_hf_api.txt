@@ -1,0 +1,9 @@
+# CPU-capable HF Space deps: multimodal inference goes to Inference Providers API (billing on HF_TOKEN).
+gradio>=5.0.0
+huggingface_hub>=0.26.0
+pillow>=12.2.0
+pdf2image>=1.17.0
+numpy>=1.26.0
+fastapi>=0.115.0
+uvicorn>=0.32.0
+python-multipart>=0.0.18

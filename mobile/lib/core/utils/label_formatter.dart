@@ -144,7 +144,8 @@ class LabelFormatter {
   /// When the model omits `action_summary`, build concrete next steps for residents.
   static String synthesizeTrackAActionSummary(TrackAResult r) {
     final buf = StringBuffer();
-    final missing = r.proofPack
+    final pack = r.proofPackDeduplicatedByCategory;
+    final missing = pack
         .where(
           (i) => i.isMissing || i.assessment == AssessmentLabel.missing,
         )
@@ -157,7 +158,7 @@ class LabelFormatter {
       );
     }
 
-    final uncertain = r.proofPack
+    final uncertain = pack
         .where((i) => i.assessment == AssessmentLabel.uncertain)
         .toList();
     if (uncertain.isNotEmpty) {

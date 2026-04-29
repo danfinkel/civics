@@ -2,23 +2,25 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Bump when you must force HF Spaces to invalidate Docker layer cache without code changes (optional).
+ARG CIVICLENS_CSS_BUNDLE=2026-04-29b
+ENV CIVICLENS_CSS_BUNDLE=$CIVICLENS_CSS_BUNDLE
+
+# Hosted Gemma via Hugging Face Inference Providers — no GPU or local model weights on this Space.
+# For self-hosted Gemma (Transformers + GPU), use: CIVICLENS_INFERENCE_BACKEND=hf + COPY requirements_hf.txt
+ENV CIVICLENS_INFERENCE_BACKEND=hf_api
+
 RUN apt-get update && apt-get install -y \
     poppler-utils \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements_hf.txt requirements.txt
+COPY requirements_hf_api.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
 COPY *.py .
+COPY branding ./branding
+COPY sample_docs ./sample_docs
 
-# Expose port
 EXPOSE 7860
 
-# Run the API server (includes Gradio at root)
 CMD ["python", "api.py"]

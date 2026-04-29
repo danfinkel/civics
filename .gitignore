@@ -16,7 +16,9 @@ Desktop.ini
 .claude/settings.local.json
 
 # --- Eval harness output ---
-research/eval/results/
+research/eval/results/*
+!research/eval/results/blur_testing/
+!research/eval/results/blur_testing/README.md
 
 # --- Python ---
 .venv/

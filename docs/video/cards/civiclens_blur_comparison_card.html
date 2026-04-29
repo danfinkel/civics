@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>CivicLens — Blur Tolerance Comparison</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #0A1628;
+    width: 1920px;
+  }
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    background: #0A1628;
+    display: flex;
+    flex-direction: column;
+    padding: 64px 80px 52px;
+    position: relative;
+    overflow: hidden;
+  }
+  .glow {
+    position: absolute;
+    width: 900px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(25,70,110,0.22) 0%, rgba(10,22,40,0) 70%);
+    top: -80px;
+    left: -80px;
+    pointer-events: none;
+  }
+  .header-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+  .wordmark {
+    font-size: 26px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.22);
+    letter-spacing: 1px;
+  }
+  .section-label {
+    font-size: 20px;
+    color: rgba(255,255,255,0.18);
+    letter-spacing: 0.04em;
+  }
+  .columns {
+    display: flex;
+    gap: 32px;
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 0;
+  }
+  .col-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .col-badge {
+    font-size: 18px;
+    font-weight: 500;
+    padding: 5px 18px;
+    border-radius: 40px;
+  }
+  .badge-good {
+    background: rgba(29,158,117,0.18);
+    color: #5DB8A0;
+    border: 1px solid rgba(93,184,160,0.28);
+  }
+  .badge-blurry {
+    background: rgba(186,117,23,0.18);
+    color: #EF9F27;
+    border: 1px solid rgba(239,159,39,0.28);
+  }
+  .col-subtitle {
+    font-size: 20px;
+    color: rgba(255,255,255,0.32);
+  }
+  /* Cells */
+  .cell {
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .cell-photo { height: 310px; }
+  .cell-photo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  .cell-app   { height: 252px; }
+  .cell-app img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+  .cell-result {
+    height: 90px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    flex-shrink: 0;
+  }
+  /* Clean column colors */
+  .c-photo  { background: rgba(29,158,117,0.05);  border: 2px dashed rgba(93,184,160,0.25); }
+  .c-app    { background: rgba(29,158,117,0.04);  border: 2px dashed rgba(93,184,160,0.18); }
+  .c-result { background: rgba(29,158,117,0.12);  border: 1px solid rgba(93,184,160,0.25); }
+  /* Blurry column colors */
+  .b-photo  { background: rgba(186,117,23,0.05);  border: 2px dashed rgba(239,159,39,0.22); }
+  .b-app    { background: rgba(186,117,23,0.04);  border: 2px dashed rgba(239,159,39,0.16); }
+  .b-result { background: rgba(186,117,23,0.12);  border: 1px solid rgba(239,159,39,0.22); }
+  /* Placeholder contents */
+  .ph {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+  }
+  .ph svg { opacity: 0.18; }
+  .ph-text { font-size: 18px; color: rgba(255,255,255,0.22); text-align: center; line-height: 1.4; }
+  .ph-sub  { font-size: 13px; color: rgba(255,255,255,0.12); text-align: center; }
+  .hint {
+    position: absolute;
+    top: 9px;
+    left: 11px;
+    z-index: 1;
+    font-size: 12px;
+    color: rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.28);
+    padding: 3px 8px;
+    border-radius: 3px;
+    pointer-events: none;
+  }
+  /* Result row internals */
+  .res-label { font-size: 18px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; }
+  .res-date  { font-size: 32px; font-weight: 600; letter-spacing: -0.5px; }
+  .res-date-clean  { color: #5DB8A0; }
+  .res-date-blurry { color: #EF9F27; }
+  .res-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 6px;
+  }
+  .rb-clean  { background: rgba(29,158,117,0.15);  color: #5DB8A0; }
+  .rb-blurry { background: rgba(186,117,23,0.15);  color: #EF9F27; }
+  /* Divider */
+  .vdiv {
+    width: 1px;
+    background: rgba(255,255,255,0.07);
+    align-self: stretch;
+    flex-shrink: 0;
+    margin: 24px 0;
+  }
+  /* Caption */
+  .caption {
+    text-align: center;
+    font-size: 21px;
+    color: rgba(255,255,255,0.20);
+    letter-spacing: 0.03em;
+    margin-top: 14px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .caption strong { color: rgba(255,255,255,0.48); font-weight: 500; }
+  .star { position: absolute; bottom: 44px; right: 80px; opacity: 0.08; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="glow"></div>
+
+  <div class="header-row">
+    <div class="wordmark">CivicLens</div>
+    <div class="section-label">Blur tolerance · deadline extraction</div>
+  </div>
+
+  <div class="columns">
+
+    <!-- LEFT: Clean -->
+    <div class="column">
+      <div class="col-label">
+        <div class="col-badge badge-good">Sharp photo</div>
+        <div class="col-subtitle">Well-framed · good lighting</div>
+      </div>
+
+      <div class="cell cell-photo c-photo">
+        <img
+          src="../../../research/eval/results/synthetic_validation/variants/blur/blur_gaussian_s0.0.jpg"
+          alt="Sharp DTA notice photo (synthetic clean)"
+        />
+        <div class="hint">synthetic clean · σ 0.0</div>
+      </div>
+
+      <div class="cell cell-app c-app">
+        <img
+          src="../../../research/eval/results/synthetic_validation/variants/app_responses/april15_shart.png"
+          alt="SNAP Document Check app screen with April 15, 2026 deadline"
+        />
+        <div class="hint">app response · sharp photo</div>
+      </div>
+
+      <div class="cell-result c-result">
+        <div class="res-label">Deadline detected</div>
+        <div class="res-date res-date-clean">April 15, 2026</div>
+        <div class="res-badge rb-clean">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#5DB8A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7.5 5.5,11 13,3.5"/></svg>
+          Extracted correctly
+        </div>
+      </div>
+    </div>
+
+    <div class="vdiv"></div>
+
+    <!-- RIGHT: Blurry -->
+    <div class="column">
+      <div class="col-label">
+        <div class="col-badge badge-blurry">Blurry photo</div>
+        <div class="col-subtitle">Motion blur · degraded quality</div>
+      </div>
+
+      <div class="cell cell-photo b-photo">
+        <img
+          src="../../../research/eval/results/synthetic_validation/variants/blur/blur_motion_l40_a90.jpg"
+          alt="Motion-blurred DTA notice photo (synthetic)"
+        />
+        <div class="hint">synthetic motion blur · L40 · 90°</div>
+      </div>
+
+      <div class="cell cell-app b-app">
+        <img
+          src="../../../research/eval/results/synthetic_validation/variants/app_responses/apri15_blurry.png"
+          alt="SNAP Document Check app screen after blurry document photo"
+        />
+        <div class="hint">app response · blurry photo</div>
+      </div>
+
+      <div class="cell-result b-result">
+        <div class="res-label">Deadline detected</div>
+        <div class="res-date res-date-blurry">April 15, 2026</div>
+        <div class="res-badge rb-blurry">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#EF9F27" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7.5 5.5,11 13,3.5"/></svg>
+          Extracted correctly
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="caption">
+    <strong>Same answer. Different photo.</strong> &nbsp;·&nbsp; Critical fields extracted correctly regardless of image quality.
+  </div>
+
+  <svg class="star" width="44" height="44" viewBox="0 0 44 44" fill="white"><path d="M22 0 L24.2 19.8 L44 22 L24.2 24.2 L22 44 L19.8 24.2 L0 22 L19.8 19.8 Z"/></svg>
+</div>
+</body>
+</html>

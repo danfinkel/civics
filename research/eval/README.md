@@ -10,6 +10,45 @@ In Xcode / device logs, look for: **`Eval server running on port 8080`**.
 
 ---
 
+## Real-World Image Quality Characterization
+
+Script: `real_photo_characterizer.py`
+
+**Experimental design:** Instead of fixing blur categories up front, we treat **LLM extraction correctness** (here: D01 `response_deadline` scored **exact** under the semantic rubric v3) as the **dependent** variable. We measure **image quality metrics** on real iPhone photos (Laplacian / Tenengrad sharpness, luminance, contrast, noise, rough skew, file size, etc.), run several **temperature-0** extractions per photo, label each photo **pass** if at least **2/3** runs get the deadline **exact**, then ask which metrics best separate pass from fail (Cohen’s d, Mann–Whitney, single-threshold accuracy, logistic regression with leave-one-out CV).
+
+**Inversion rationale:** A single Laplacian-variance threshold can miss failures due to motion blur, poor light, or focus. By letting the data show which statistics track **observed** model failure, we can tune or replace the blur gate with predictors that match the **actual** extraction task.
+
+**Outputs** (under `--out`, default `research/eval/results/real_photo_analysis/`; for [`blur_testing.ipynb`](blur_testing.ipynb) use `research/eval/results/blur_testing/` — see that folder’s README):
+
+| File | Purpose |
+|------|---------|
+| `photo_attributes.csv` | Per-photo metrics (sharpness, luminance, **coverage, shadow, directional blur, document boundary** — see `ATTRIBUTE_COLS` in `real_photo_characterizer.py`) + `pass_rate` + `label` |
+| `attribute_ranking.csv` | Effect size and non-parametric test per metric |
+| `logistic_regression_report.txt` | LOO accuracy and standardized coefficients |
+| `decision_rule.txt` | Best single-feature threshold vs Laplacian baseline |
+| `summary.md` | Short narrative for writeups |
+| `converted/` | JPEGs produced from HEIC (originals untouched) |
+
+**Dependencies (in addition to `requirements.txt`):**  
+`pip install pillow-heif opencv-python scipy scikit-learn pandas numpy ollama`  
+(Use `opencv-python-headless` on servers without a display stack.)
+
+**Quick run (metrics only — no model, no phone):**
+
+```bash
+cd research/eval
+pip install pillow-heif opencv-python scipy scikit-learn pandas numpy
+python3 real_photo_characterizer.py --photos /path/to/heic_or_jpeg --attributes-only
+```
+
+**Full run (local Ollama, `gemma4:e4b`):** start `ollama serve`, then same script without `--attributes-only` and `--backend ollama` (default). The script calls Ollama via **HTTP `/api/chat`** (not the Python `ollama` client) with an explicit read timeout, and prints a **heartbeat every 15s** while waiting — the first vision request can still take **many minutes** while the model loads. By default JPEGs are **resized to max 1024px** long edge (same as `web_demo`). Use `--ollama-max-long-edge 0` only if you accept very long runs; `--ollama-timeout` caps each request (default 600s).
+
+**On-device eval server:** build the app with `EVAL_MODE=true`, set `--backend eval-server` and `--phone-ip` (or `PHONE_IP`); use `--photo-break` to cool the device between photos.
+
+**How to read the output:** Large **Cohen’s d** with low **p-value** in `attribute_ranking.csv` means that metric shifts between pass and fail groups. The **decision rule** file compares a **data-driven** one-dimensional threshold to the best Laplacian threshold on the *same* photos — not a claim that one number generalizes to all users, but a diagnostic on your corpus. Add more **deliberately hard** photos to stabilize rankings.
+
+---
+
 ## Prerequisites (checklist)
 
 1. **Physical device** on the same Wi‑Fi as the Mac; app **Run** from Xcode (Product → Run) with eval build.

@@ -17,6 +17,7 @@ from PIL import Image
 
 from blur_detector import detect_blur
 from prompts import build_track_a_prompt, build_track_b_prompt
+from upload_utils import coerce_track_a_files, coerce_track_b_files
 
 # Model configuration
 DEFAULT_MODEL = "gemma4:e4b"
@@ -149,6 +150,8 @@ def run_track_a(
     Returns:
         Dictionary with results, action summary, and metadata
     """
+    notice_file, doc1, doc2, doc3 = coerce_track_a_files(notice_file, doc1, doc2, doc3)
+
     # Collect all files
     files = []
     if notice_file:
@@ -161,7 +164,7 @@ def run_track_a(
         files.append(("Document 3", doc3))
 
     if not files:
-        return {"error": "No documents provided"}
+        return {"error": "No documents provided", "raw_response": "", "success": False}
 
     # Preprocess all images
     images_b64 = []
@@ -229,6 +232,8 @@ def run_track_b(
     Returns:
         Dictionary with results, family summary, and metadata
     """
+    doc1, doc2, doc3, doc4, doc5 = coerce_track_b_files(doc1, doc2, doc3, doc4, doc5)
+
     # Collect all files
     files = []
     docs = [doc1, doc2, doc3, doc4, doc5]
@@ -237,7 +242,7 @@ def run_track_b(
             files.append((f"Document {i}", doc))
 
     if not files:
-        return {"error": "No documents provided"}
+        return {"error": "No documents provided", "raw_response": "", "success": False}
 
     # Preprocess all images
     images_b64 = []

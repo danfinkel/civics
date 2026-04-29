@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>CivicLens — Stat Cards (Dark)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #0A1628;
+    width: 1920px;
+  }
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    background: #0A1628;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 280px;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 2px dashed rgba(255,255,255,0.06);
+  }
+  .glow {
+    position: absolute;
+    width: 800px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(25,65,105,0.28) 0%, rgba(10,22,40,0) 70%);
+    top: -80px;
+    left: -80px;
+    pointer-events: none;
+  }
+  .wordmark {
+    position: absolute;
+    top: 64px;
+    left: 280px;
+    font-size: 26px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.22);
+    letter-spacing: 1px;
+  }
+  .card-num {
+    position: absolute;
+    bottom: 44px;
+    right: 280px;
+    font-size: 18px;
+    color: rgba(255,255,255,0.15);
+  }
+  .accent {
+    width: 56px;
+    height: 5px;
+    background: #5DB8A0;
+    border-radius: 3px;
+    margin-bottom: 52px;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-number {
+    font-size: 160px;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.0;
+    letter-spacing: -6px;
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-label {
+    font-size: 40px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+    max-width: 1200px;
+    margin-bottom: 36px;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-label strong { color: rgba(255,255,255,0.90); font-weight: 500; }
+  .divider {
+    width: 56px;
+    height: 1px;
+    background: rgba(255,255,255,0.12);
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-source {
+    font-size: 22px;
+    color: rgba(255,255,255,0.25);
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
+  }
+  .gap-heading {
+    font-size: 88px;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.15;
+    letter-spacing: -2px;
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .gap-body {
+    font-size: 40px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+    max-width: 1200px;
+    position: relative;
+    z-index: 1;
+  }
+  .quote-text {
+    font-size: 44px;
+    font-weight: 400;
+    font-style: italic;
+    color: rgba(255,255,255,0.70);
+    line-height: 1.55;
+    max-width: 1300px;
+    margin-bottom: 40px;
+    padding-left: 52px;
+    border-left: 5px solid #5DB8A0;
+    position: relative;
+    z-index: 1;
+  }
+  .quote-attr {
+    font-size: 24px;
+    color: rgba(255,255,255,0.28);
+    padding-left: 52px;
+    position: relative;
+    z-index: 1;
+  }
+  .star {
+    position: absolute;
+    bottom: 52px;
+    right: 80px;
+    opacity: 0.10;
+  }
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <div class="glow"></div>
+  <div class="wordmark">CivicLens</div>
+  <div class="accent"></div>
+  <div class="stat-number">40.9%</div>
+  <div class="stat-label">of Massachusetts SNAP participants with young children<br><strong>lose benefits due to administrative failures</strong> —<br>not because they became ineligible.</div>
+  <div class="divider"></div>
+  <div class="stat-source">Kowalczyk et al., JAMA Network Open, 2022 &nbsp;·&nbsp; Massachusetts DTA administrative data &nbsp;·&nbsp; n = 70,799</div>
+  <div class="card-num">1 / 4</div>
+  <svg class="star" width="44" height="44" viewBox="0 0 44 44" fill="white"><path d="M22 0 L24.2 19.8 L44 22 L24.2 24.2 L22 44 L19.8 24.2 L0 22 L19.8 19.8 Z"/></svg>
+</div>
+
+<div class="slide">
+  <div class="glow"></div>
+  <div class="wordmark">CivicLens</div>
+  <div class="accent"></div>
+  <div class="stat-number">$600</div>
+  <div class="stat-label"><strong>average benefit loss</strong> for a family that fails SNAP recertification.<br>One in four remains off the program for over a year.</div>
+  <div class="divider"></div>
+  <div class="stat-source">Homonoff &amp; Somerville, American Economic Journal: Economic Policy, 2021</div>
+  <div class="card-num">2 / 4</div>
+  <svg class="star" width="44" height="44" viewBox="0 0 44 44" fill="white"><path d="M22 0 L24.2 19.8 L44 22 L24.2 24.2 L22 44 L19.8 24.2 L0 22 L19.8 19.8 Z"/></svg>
+</div>
+
+<div class="slide">
+  <div class="glow"></div>
+  <div class="wordmark">CivicLens</div>
+  <div class="accent"></div>
+  <div class="gap-heading">The gap isn't eligibility.</div>
+  <div class="gap-body">The documents existed. The deadline was published.<br>The gap was knowing whether what they had<br>was what was needed — <strong style="color:rgba(255,255,255,0.85);">before they found out it wasn't.</strong></div>
+  <div class="card-num">3 / 4</div>
+  <svg class="star" width="44" height="44" viewBox="0 0 44 44" fill="white"><path d="M22 0 L24.2 19.8 L44 22 L24.2 24.2 L22 44 L19.8 24.2 L0 22 L19.8 19.8 Z"/></svg>
+</div>
+
+<div class="slide">
+  <div class="glow"></div>
+  <div class="wordmark">CivicLens</div>
+  <div class="accent"></div>
+  <div class="quote-text">"The way individuals apply for and interact with government programs can create huge barriers to program access, especially for means-tested programs which require frequent recertification."</div>
+  <div class="quote-attr">— Tatiana Homonoff, Cornell University &nbsp;·&nbsp; American Economic Association, 2021</div>
+  <div class="card-num">4 / 4 (optional)</div>
+  <svg class="star" width="44" height="44" viewBox="0 0 44 44" fill="white"><path d="M22 0 L24.2 19.8 L44 22 L24.2 24.2 L22 44 L19.8 24.2 L0 22 L19.8 19.8 Z"/></svg>
+</div>
+
+</body>
+</html>

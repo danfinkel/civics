@@ -87,4 +87,49 @@ void main() {
     expect(find.text('Not found in your documents'), findsOneWidget);
     expect(find.text('MISSING'), findsNothing);
   });
+
+  testWidgets(
+    'dedupes duplicate proof-pack rows for the same category (satisfies beats missing)',
+    (tester) async {
+    final mockResult = TrackAResult(
+      noticeSummary: const NoticeSummary(
+        requestedCategories: ['earned_income'],
+        deadline: 'April 15, 2026',
+        consequence: 'case_closure',
+      ),
+      proofPack: const [
+        ProofPackItem(
+          category: 'earned_income',
+          matchedDocument: 'Document 1',
+          assessment: AssessmentLabel.likelySatisfies,
+          confidence: ConfidenceLevel.high,
+          evidence: 'pay on doc 1',
+          caveats: '',
+        ),
+        ProofPackItem(
+          category: 'earned_income',
+          matchedDocument: 'MISSING',
+          assessment: AssessmentLabel.missing,
+          confidence: ConfidenceLevel.low,
+          evidence: '',
+          caveats: '',
+        ),
+      ],
+      actionSummary: '',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 400,
+          height: 900,
+          child: TrackAResultsScreen(result: mockResult),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Appears to meet this requirement'), findsOneWidget);
+    expect(find.text('Not found in your documents'), findsNothing);
+  });
 }

@@ -153,7 +153,8 @@ class TrackAResultsView extends StatelessWidget {
                 style: PrismTypography.spaceGrotesk(fontSize: 20),
               ),
               const SizedBox(height: 16),
-              ...result.proofPack.map((item) => _ProofPackItemTile(item)),
+              ...result.proofPackDeduplicatedByCategory
+                  .map((item) => _ProofPackItemTile(item)),
               const SizedBox(height: 24),
               _ActionSummaryCard(
                 summary: result.actionSummary.trim().isNotEmpty

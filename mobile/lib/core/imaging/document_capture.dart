@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../shared/theme/prism_typography.dart';
 import 'blur_detector.dart';
+import 'document_frame_detector.dart';
 import 'image_processor.dart';
 
 /// Represents a captured document with metadata
@@ -13,8 +14,14 @@ class CapturedDocument {
   final DateTime capturedAt;
   final String? source; // 'camera' or 'gallery'
 
+  /// Government-notice pre-screen (distance / busyness / frame shape) — not rotation.
+  final DocumentFrameResult? frameResult;
+
   /// User chose "Use anyway" after a blur warning; hide aggressive blur UX but keep score.
   final bool acceptedDespiteBlur;
+
+  /// User overrode a government-notice [frameResult] that [DocumentFrameResult.shouldBlock]s.
+  final bool acceptedDespiteFrameGates;
 
   const CapturedDocument({
     required this.id,
@@ -22,7 +29,9 @@ class CapturedDocument {
     required this.blurResult,
     required this.capturedAt,
     this.source,
+    this.frameResult,
     this.acceptedDespiteBlur = false,
+    this.acceptedDespiteFrameGates = false,
   });
 
   bool get isClear => !blurResult.isBlurry || acceptedDespiteBlur;
@@ -30,13 +39,21 @@ class CapturedDocument {
   /// Show thumbnail treatment / retake nudge when the image is blurry and not overridden.
   bool get shouldWarnBlur => blurResult.isBlurry && !acceptedDespiteBlur;
 
+  /// Framing / distance gate from synthetic validation (notice flow only; [frameResult] null otherwise).
+  bool get shouldWarnFrame =>
+      frameResult != null &&
+      frameResult!.shouldBlock &&
+      !acceptedDespiteFrameGates;
+
   CapturedDocument copyWith({
     String? id,
     Uint8List? imageBytes,
     BlurResult? blurResult,
     DateTime? capturedAt,
     String? source,
+    DocumentFrameResult? frameResult,
     bool? acceptedDespiteBlur,
+    bool? acceptedDespiteFrameGates,
   }) {
     return CapturedDocument(
       id: id ?? this.id,
@@ -44,7 +61,10 @@ class CapturedDocument {
       blurResult: blurResult ?? this.blurResult,
       capturedAt: capturedAt ?? this.capturedAt,
       source: source ?? this.source,
+      frameResult: frameResult ?? this.frameResult,
       acceptedDespiteBlur: acceptedDespiteBlur ?? this.acceptedDespiteBlur,
+      acceptedDespiteFrameGates:
+          acceptedDespiteFrameGates ?? this.acceptedDespiteFrameGates,
     );
   }
 }
@@ -54,9 +74,14 @@ class DocumentCapture {
   final ImagePicker _picker = ImagePicker();
   final BlurDetector _blurDetector = BlurDetector();
   final ImageProcessor _imageProcessor = ImageProcessor();
+  final DocumentFrameDetector _frameDetector = DocumentFrameDetector();
 
   /// Capture a document using the camera
-  Future<CapturedDocument?> captureFromCamera() async {
+  /// When [preScreenForGovernmentNotice] is true, runs distance / busyness / frame-shape
+  /// checks aligned with research validation (rotation is not gating yet).
+  Future<CapturedDocument?> captureFromCamera({
+    bool preScreenForGovernmentNotice = false,
+  }) async {
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
       maxWidth: 2048,
@@ -66,11 +91,13 @@ class DocumentCapture {
 
     if (photo == null) return null;
 
-    return _processCapturedFile(photo, 'camera');
+    return _processCapturedFile(photo, 'camera', preScreenForGovernmentNotice);
   }
 
   /// Select a document from the gallery
-  Future<CapturedDocument?> pickFromGallery() async {
+  Future<CapturedDocument?> pickFromGallery({
+    bool preScreenForGovernmentNotice = false,
+  }) async {
     final XFile? image = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 2048,
@@ -80,18 +107,24 @@ class DocumentCapture {
 
     if (image == null) return null;
 
-    return _processCapturedFile(image, 'gallery');
+    return _processCapturedFile(image, 'gallery', preScreenForGovernmentNotice);
   }
 
   /// Process a captured file through blur detection and image processing
   Future<CapturedDocument> _processCapturedFile(
     XFile file,
     String source,
+    bool preScreenForGovernmentNotice,
   ) async {
-    final bytes = await file.readAsBytes();
+    final bytes = await _readXFileBytes(file);
 
     // Run blur detection on original
     final blurResult = _blurDetector.analyzeBytes(bytes);
+
+    // Government notice: framing / distance (matches synthetic_threshold_validator, no rotation gate)
+    final frameResult = preScreenForGovernmentNotice
+        ? _frameDetector.analyzeBytes(bytes)
+        : null;
 
     // Process image for storage/use
     final processedBytes = await _imageProcessor.processBytes(bytes);
@@ -102,6 +135,7 @@ class DocumentCapture {
       blurResult: blurResult,
       capturedAt: DateTime.now(),
       source: source,
+      frameResult: frameResult,
     );
   }
 
@@ -109,6 +143,17 @@ class DocumentCapture {
   Future<BlurResult> reanalyzeBlur(Uint8List imageBytes) async {
     return _blurDetector.analyzeBytes(imageBytes);
   }
+}
+
+/// Some iOS / temp `XFile` paths return a stub or empty first read; a short
+/// delay + retry fixes one-shot “works on 2nd try” behavior in the field.
+Future<Uint8List> _readXFileBytes(XFile file) async {
+  var bytes = await file.readAsBytes();
+  if (bytes.lengthInBytes < 400) {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    bytes = await file.readAsBytes();
+  }
+  return bytes;
 }
 
 /// Widget for document capture with blur detection
