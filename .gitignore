@@ -84,3 +84,7 @@ mobile/**/windows/flutter/ephemeral/
 *.sublime-workspace
 # Delete the next line if you want .vscode/ (launch.json, etc.) in the repo.
 .vscode/
+
+# --- AI Coding Assistant ---
+CLAUDE.md
+
