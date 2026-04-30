@@ -2,7 +2,7 @@
 """
 Rasterize spike clean PDFs to JPEG for eval (variant clean_jpeg).
 
-Writes one image per artifact: spike/artifacts/clean/<ID>-clean-raster.jpg
+Writes one image per artifact: research/artifacts/clean/<ID>-clean-raster.jpg
 All PDF pages are stacked vertically at configurable DPI (default 120).
 
 Dependencies: pip install pymupdf pillow
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CLEAN_DIR = REPO_ROOT / "spike" / "artifacts" / "clean"
+CLEAN_DIR = REPO_ROOT / "research" / "artifacts" / "clean"
 
 
 def pdf_to_stacked_jpeg(

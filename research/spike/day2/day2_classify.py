@@ -26,7 +26,7 @@ import httpx
 import ollama
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SPIKE_DIR = SCRIPT_DIR.parent.parent.parent
+SPIKE_DIR = SCRIPT_DIR.parent.parent
 DEFAULT_GT = SPIKE_DIR / "artifacts" / "clean" / "html" / "ground_truth.csv"
 CLEAN_DIR = SPIKE_DIR / "artifacts" / "clean"
 DEGRADED_DIR = SPIKE_DIR / "artifacts" / "degraded"

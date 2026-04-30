@@ -26,7 +26,7 @@ import httpx
 import ollama
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SPIKE_DIR = SCRIPT_DIR.parent.parent.parent
+SPIKE_DIR = SCRIPT_DIR.parent.parent  # Go up to research/ (research/spike/day3 -> research/spike -> research)
 DEGRADED_DIR = SPIKE_DIR / "artifacts" / "degraded"
 
 # Model configuration

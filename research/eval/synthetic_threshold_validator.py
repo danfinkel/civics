@@ -772,7 +772,7 @@ def main() -> None:
     p.add_argument(
         "--base",
         type=Path,
-        default=_REPO_ROOT / "spike" / "artifacts" / "clean" / "jpeg" / "D01-clean.jpg",
+        default=_REPO_ROOT / "research" / "artifacts" / "clean" / "jpeg" / "D01-clean.jpg",
     )
     p.add_argument(
         "--out",

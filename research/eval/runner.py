@@ -27,11 +27,11 @@ from prompt_conditions import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SPIKE_DIR = REPO_ROOT / "spike"
-ARTIFACTS_CLEAN = SPIKE_DIR / "artifacts" / "clean"
-ARTIFACTS_DEGRADED = SPIKE_DIR / "artifacts" / "degraded"
-ARTIFACTS_BLURRY = SPIKE_DIR / "artifacts" / "blurry"
-GROUND_TRUTH_CSV = SPIKE_DIR / "artifacts" / "clean" / "html" / "ground_truth.csv"
+ARTIFACTS_ROOT = REPO_ROOT / "research" / "artifacts"
+ARTIFACTS_CLEAN = ARTIFACTS_ROOT / "clean"
+ARTIFACTS_DEGRADED = ARTIFACTS_ROOT / "degraded"
+ARTIFACTS_BLURRY = ARTIFACTS_ROOT / "blurry"
+GROUND_TRUTH_CSV = ARTIFACTS_ROOT / "clean" / "html" / "ground_truth.csv"
 DEFAULT_EVAL_JSONL_OUT = REPO_ROOT / "research" / "eval" / "results" / "run.jsonl"
 
 FIELD_SCORE_LABELS: tuple[str, ...] = (
@@ -209,7 +209,7 @@ def load_image_bytes(artifact_id: str, variant: str) -> bytes:
             ARTIFACTS_CLEAN / f"{artifact_id}.jpg",
         ]
     elif variant == "clean_jpeg":
-        # Rasterized from clean PDF (see spike/scripts/rasterize_clean_pdfs_to_jpeg.py).
+        # Rasterized from clean PDF (see research/spike/rasterize_clean_pdfs_to_jpeg.py).
         candidates = [
             ARTIFACTS_CLEAN / f"{artifact_id}-clean-raster.jpg",
             ARTIFACTS_CLEAN / f"{artifact_id}-clean-raster.jpeg",

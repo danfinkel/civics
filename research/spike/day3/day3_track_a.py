@@ -29,13 +29,13 @@ import ollama
 from PIL import Image
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SPIKE_DIR = SCRIPT_DIR.parent.parent.parent  # Go up to spike/ (scripts/spike/day3 -> scripts/spike -> scripts -> spike)
+SPIKE_DIR = SCRIPT_DIR.parent.parent  # Go up to research/ (research/spike/day3 -> research/spike -> research)
 ARTIFACTS_DIR = SPIKE_DIR / "artifacts"
 DEGRADED_DIR = ARTIFACTS_DIR / "degraded"
 BLURRY_DIR = ARTIFACTS_DIR / "blurry"
 
-# Import shared utilities from day1 (SPIKE_DIR is at spike/ level, day1 is at spike/scripts/spike/day1)
-sys.path.insert(0, str(SPIKE_DIR / "scripts" / "spike" / "day1"))
+# Import shared utilities from day1
+sys.path.insert(0, str(SPIKE_DIR / "spike" / "day1"))
 from day1_extract import to_jpeg_b64, score_field  # noqa: E402
 
 MODEL = "gemma4:e4b"
