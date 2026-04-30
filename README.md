@@ -21,9 +21,24 @@ Privacy-first civic document intelligence — powered by Gemma 4, running entire
 
 <div align="center">
 
-<img src="docs/media/opening5.png" alt="SNAP Document Check on iPhone: respond-by deadline alert, Income proof marked Looks good with high confidence, Start Over and Save Summary actions" width="390" />
+<table>
+<tr>
+<td align="center" valign="top">
 
-*SNAP Document Check — verified proof pack and action summary.*
+<img src="docs/media/opening2.png" alt="CivicLens home: Transparency card, Choose a service, Start a review with SNAP Benefits and School Enrollment" width="293" />
+
+<br /><sub><i>Home — pick a flow (SNAP or School Enrollment).</i></sub>
+
+</td>
+<td align="center" valign="top">
+
+<img src="docs/media/opening5.png" alt="SNAP Document Check on iPhone: respond-by deadline alert, Income proof marked Looks good with high confidence, Start Over and Save Summary actions" width="293" />
+
+<br /><sub><i>SNAP Document Check — verified proof pack and summary.</i></sub>
+
+</td>
+</tr>
+</table>
 
 </div>
 
