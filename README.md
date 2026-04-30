@@ -19,6 +19,16 @@ Privacy-first civic document intelligence — powered by Gemma 4, running entire
 
 ---
 
+<div align="center">
+
+<img src="docs/media/opening5.png" alt="SNAP Document Check on iPhone: respond-by deadline alert, Income proof marked Looks good with high confidence, Start Over and Save Summary actions" width="390" />
+
+*SNAP Document Check — verified proof pack and action summary.*
+
+</div>
+
+---
+
 ## What it does
 
 Every year, millions of Americans interact with government benefit systems that require them to submit documentary proof of who they are, where they live, and how much they earn. SNAP recertification. School enrollment. Housing assistance. Medicaid renewals. The documents are not hard to find. The instructions are not impossible to read. But the combination of unfamiliar bureaucratic language, tight deadlines, and multiple simultaneous requirements creates real failure rates for people who cannot afford to fail.
