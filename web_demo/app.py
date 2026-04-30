@@ -28,6 +28,8 @@ from label_formatting import (
 )
 
 _WEB_DIR = Path(__file__).resolve().parent
+# Public repo link (hero + footer).
+CIVICLENS_GITHUB_REPO = "https://github.com/DanFinkel/civics"
 _SAMPLE_DIR = _WEB_DIR / "sample_docs"
 # Track A SNAP: bundled demo JPGs for “Load sample” (also copied in Dockerfile for HF Spaces).
 SAMPLE_TRACK_A_NOTICE_JPG = _SAMPLE_DIR / "D01-clean.jpg"
@@ -537,7 +539,46 @@ gradio-app .civic-file-slot {{
     opacity: 0.92;
 }}
 
-/* Accordions with primary/header styling need light label text (theme block_title remains navy — for white panels). */
+.civiclens-hero-source {{
+    margin: 14px 0 0;
+    font-size: 14px;
+    font-weight: 500;
+}}
+.civiclens-hero-source a {{
+    color: {COLORS['on_primary']} !important;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    opacity: 0.95;
+}}
+.civiclens-hero-source a:hover {{
+    opacity: 1;
+}}
+
+/* Track A: full-width Analyze CTA above the upload / results split */
+#civiclens-app .civic-track-a-cta {{
+    width: 100%;
+    padding: 4px 0 12px;
+    margin-bottom: 2px;
+    text-align: center;
+}}
+#civiclens-app .civic-track-a-cta button.civic-analyze-primary {{
+    font-size: 1.08rem !important;
+    font-family: var(--font-display) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+    min-height: 52px !important;
+    width: min(100%, 28rem);
+    margin: 0 auto;
+    box-shadow: 0 6px 18px rgba(0, 36, 68, 0.22);
+}}
+#civiclens-app .civic-track-a-cta .civiclens-inference-note,
+#civiclens-app .civic-track-a-cta .civiclens-inference-note p {{
+    margin-top: 8px !important;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 36rem;
+    text-align: center;
+}}
 .civic-json-accordion details > summary,
 .civic-json-accordion details > summary *,
 .civic-json-accordion summary,
@@ -572,74 +613,149 @@ gradio-app .civic-file-slot {{
     color: {COLORS['on_primary']} !important;
 }}
 
+:is(#civiclens-app, gradio-app) #civic-results-snap,
+:is(#civiclens-app, gradio-app) #civic-results-bps {{
+    isolation: isolate;
+    position: relative;
+    z-index: 0;
+}}
+
+:is(#civiclens-app, gradio-app) .civic-json-accordion {{
+    position: relative;
+    z-index: 2;
+}}
+
 /*
  * Inference status (StreamingBar). Idle state uses `.wrap.hide` + opacity 0; our min-height still
  * reserved a strip — collapse the tracker entirely until a run. Thicken `.progress-bar-wrap` (track behind fill).
  */
-#civiclens-app [data-testid="status-tracker"]:has(.wrap.hide),
-gradio-app [data-testid="status-tracker"]:has(.wrap.hide) {{
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"]:has(.wrap.hide) {{
     display: none !important;
 }}
 
-#civiclens-app [data-testid="status-tracker"],
-gradio-app [data-testid="status-tracker"] {{
-    --body-text-color: rgba(248, 250, 252, 0.98);
-    --loader-color: {COLORS['on_primary']};
-    --background-fill-secondary: rgba(0, 36, 68, 0.15);
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] {{
+    --body-text-color: #334155 !important;
+    --loader-color: {COLORS['primary']} !important;
+    --background-fill-secondary: rgba(0, 36, 68, 0.12);
 }}
 
-#civiclens-app [data-testid="status-tracker"] span,
-#civiclens-app [data-testid="status-tracker"] time,
-#civiclens-app [data-testid="status-tracker"] .progress-text,
-#civiclens-app [data-testid="status-tracker"] .duration,
-#civiclens-app [data-testid="status-tracker"] .progress-level-inner,
-#civiclens-app [data-testid="status-tracker"] .meta-text,
-#civiclens-app [data-testid="status-tracker"] .meta-text-center,
-#civiclens-app [data-testid="status-tracker"] .loading {{
-    color: rgba(248, 250, 252, 0.98) !important;
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] span,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] time,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .progress-text,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .duration,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .progress-level-inner,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .meta-text,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .meta-text-center,
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .loading {{
+    color: #334155 !important;
 }}
 
-#civiclens-app [data-testid="status-tracker"] .loading-spinner,
-.civic-json-accordion .loading-spinner {{
-    border-color: rgba(248, 250, 252, 0.95) !important;
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .loading-spinner {{
+    border-color: rgba(0, 36, 68, 0.42) !important;
     border-top-color: transparent !important;
 }}
 
-#civiclens-app [data-testid="status-tracker"] svg {{
-    color: rgba(248, 250, 252, 0.95) !important;
-    stroke: rgba(248, 250, 252, 0.95) !important;
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] svg {{
+    color: {COLORS['primary']} !important;
+    stroke: {COLORS['primary']} !important;
     opacity: 1 !important;
 }}
 
-/* Thicker track (light bar the fill runs on) + optional bottom countdown strip */
-#civiclens-app [data-testid="status-tracker"] .progress-bar-wrap {{
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .wrap[class*="svelte"] {{
+    --body-text-color: #334155 !important;
+}}
+
+:is(#civiclens-app, gradio-app) #civic-results-snap [data-testid="status-tracker"],
+:is(#civiclens-app, gradio-app) #civic-results-bps [data-testid="status-tracker"] {{
+    position: relative !important;
+    --block-background-fill: {COLORS['surface_container_lowest']} !important;
+    --background-fill-primary: {COLORS['surface_container_lowest']} !important;
+    --background-fill-secondary: #e2e8f0 !important;
+}}
+
+/* Results / light cards: timer row in document flow — not absolutely pinned over sibling accordion */
+:is(#civiclens-app, gradio-app) #civic-results-snap [data-testid="status-tracker"] > .wrap[class*="svelte"]:not(.hide),
+:is(#civiclens-app, gradio-app) #civic-results-bps [data-testid="status-tracker"] > .wrap[class*="svelte"]:not(.hide),
+:is(#civiclens-app, gradio-app) .civic-results-html [data-testid="status-tracker"] > .wrap[class*="svelte"]:not(.hide) {{
+    position: static !important;
+    inset: auto !important;
+    min-height: unset !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    /* Gradio default: background var(--block-background-fill) — often dark in nested context */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+
+/* Minimal mode: .progress-text can get block fill — flush with Results card */
+:is(#civiclens-app, gradio-app) #civic-results-snap [data-testid="status-tracker"] .progress-text,
+:is(#civiclens-app, gradio-app) #civic-results-bps [data-testid="status-tracker"] .progress-text,
+:is(#civiclens-app, gradio-app) .civic-results-html [data-testid="status-tracker"] .progress-text {{
+    background: transparent !important;
+}}
+
+:is(#civiclens-app, gradio-app) #civic-results-snap [data-testid="status-tracker"] .meta-text,
+:is(#civiclens-app, gradio-app) #civic-results-snap [data-testid="status-tracker"] .meta-text-center,
+:is(#civiclens-app, gradio-app) #civic-results-bps [data-testid="status-tracker"] .meta-text,
+:is(#civiclens-app, gradio-app) #civic-results-bps [data-testid="status-tracker"] .meta-text-center,
+:is(#civiclens-app, gradio-app) .civic-results-html [data-testid="status-tracker"] .meta-text,
+:is(#civiclens-app, gradio-app) .civic-results-html [data-testid="status-tracker"] .meta-text-center {{
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    background: transparent !important;
+}}
+
+/* Nested under Raw JSON accordion (navy header): keep light text + spinner ring */
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] {{
+    --body-text-color: rgba(248, 250, 252, 0.98);
+    --loader-color: {COLORS['on_primary']};
+}}
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] span,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] time,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .progress-text,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .duration,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .progress-level-inner,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .meta-text,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .meta-text-center,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .loading {{
+    color: rgba(248, 250, 252, 0.95) !important;
+}}
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .loading-spinner {{
+    border-color: rgba(248, 250, 252, 0.88) !important;
+    border-top-color: transparent !important;
+}}
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] svg {{
+    color: rgba(248, 250, 252, 0.95) !important;
+    stroke: rgba(248, 250, 252, 0.95) !important;
+}}
+
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .wrap[class*="svelte"] {{
+    --body-text-color: rgba(248, 250, 252, 0.98) !important;
+}}
+
+/* Thicker progress track (accordion block sets its own bar sizes below) */
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .progress-bar-wrap {{
     height: 12px !important;
     min-height: 12px !important;
     border-radius: var(--radius-full);
 }}
-#civiclens-app [data-testid="status-tracker"] .progress-bar {{
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .progress-bar {{
     min-height: 12px !important;
 }}
-#civiclens-app [data-testid="status-tracker"] .streaming-bar {{
+:is(#civiclens-app, gradio-app) [data-testid="status-tracker"] .streaming-bar {{
     height: 6px !important;
 }}
 
-/* Room for absolute-positioned ETA captions only while the bar is active (not `.hide`) */
-#civiclens-app [data-testid="status-tracker"] > .wrap[class*="svelte"]:not(.hide) {{
-    box-sizing: border-box;
-    min-height: 5rem;
-    padding-top: 0.75rem !important;
-    padding-bottom: 1.75rem !important;
-}}
-
 /* In-accordion StreamingBar: undo absolute meta/center text so "processing | …" sits in the navy header */
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] {{
     flex: 1 1 auto;
     min-width: 0;
     max-width: 100%;
 }}
 
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] > .wrap[class*="svelte"]:not(.hide) {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] > .wrap[class*="svelte"]:not(.hide) {{
     position: relative !important;
     inset: auto !important;
     min-height: unset !important;
@@ -649,8 +765,8 @@ gradio-app [data-testid="status-tracker"] {{
     justify-content: flex-end;
 }}
 
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .meta-text,
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .meta-text-center {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .meta-text,
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .meta-text-center {{
     position: static !important;
     inset: auto !important;
     transform: none !important;
@@ -661,25 +777,25 @@ gradio-app [data-testid="status-tracker"] {{
     white-space: nowrap;
 }}
 
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .progress-level-inner {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .progress-level-inner {{
     position: static !important;
     margin: 0.125rem 0 0 !important;
 }}
 
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .progress-level {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .progress-level {{
     width: 100%;
     max-width: 18rem;
 }}
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .progress-bar-wrap {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .progress-bar-wrap {{
     height: 14px !important;
     min-height: 14px !important;
     width: min(100%, 18rem) !important;
 }}
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .progress-bar {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .progress-bar {{
     min-height: 14px !important;
 }}
 
-#civiclens-app .civic-json-accordion [data-testid="status-tracker"] .eta-bar {{
+:is(#civiclens-app, gradio-app) .civic-json-accordion [data-testid="status-tracker"] .eta-bar {{
     position: absolute !important;
     inset: auto !important;
     left: 0 !important;
@@ -689,17 +805,6 @@ gradio-app [data-testid="status-tracker"] {{
     height: 6px !important;
     border-radius: var(--radius-full);
     opacity: 0.85;
-}}
-
-.civic-json-accordion [data-testid="status-tracker"] span,
-.civic-json-accordion [data-testid="status-tracker"] .progress-text {{
-    color: rgba(248, 250, 252, 0.95) !important;
-}}
-
-.civic-json-accordion [data-testid="status-tracker"] svg {{
-    color: rgba(248, 250, 252, 0.95) !important;
-    stroke: rgba(248, 250, 252, 0.95) !important;
-    opacity: 1 !important;
 }}
 
 .civiclens-brand-text {{
@@ -777,6 +882,14 @@ gradio-app [data-testid="status-tracker"] {{
 
 .gr-button-primary:active {{
     opacity: 0.95 !important;
+}}
+
+/* Result panel: hints when no uploads (plain HTML can inherit unreadable pale tokens from Gradio) */
+#civiclens-app .civiclens-results-hint {{
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #334155 !important;
 }}
 
 /* Result cards + badges (semantic colors unchanged) */
@@ -863,6 +976,21 @@ gradio-app [data-testid="status-tracker"] {{
 
 .privacy-footer strong {{
     color: var(--primary);
+}}
+
+.privacy-footer-source {{
+    margin-top: 14px;
+}}
+
+.privacy-footer-source a {{
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 13px;
+    text-underline-offset: 2px;
+}}
+
+.privacy-footer-source a:hover {{
+    color: #002444;
 }}
 """
 
@@ -1068,11 +1196,18 @@ def format_track_a_results(result: dict) -> str:
     return out
 
 
+def _format_results_placeholder(message: str) -> str:
+    """Markup for short hints in ``gr.HTML`` so text is not overridden by native light-on-dark tokens."""
+    return f'<p class="civiclens-results-hint">{html.escape(message)}</p>'
+
+
 def process_track_a(notice, doc1, doc2, doc3):
     """Process Track A documents and return formatted results."""
     if not any(coerce_track_a_files(notice, doc1, doc2, doc3)):
         return (
-            "Upload at least one document (your DTA notice first, if you have it).",
+            _format_results_placeholder(
+                "Upload at least one document (your DTA notice first, if you have it)."
+            ),
             "",
         )
 
@@ -1085,7 +1220,7 @@ def process_track_a(notice, doc1, doc2, doc3):
 def process_track_b(doc1, doc2, doc3, doc4, doc5):
     """Process Track B documents and return formatted results."""
     if not any(coerce_track_b_files(doc1, doc2, doc3, doc4, doc5)):
-        return "Please upload at least one document to begin.", ""
+        return _format_results_placeholder("Please upload at least one document to begin."), ""
 
     result = run_track_b(doc1, doc2, doc3, doc4, doc5)
     html_output = format_track_b_results(result)
@@ -1115,6 +1250,9 @@ with gr.Blocks(
                         Privacy-first civic document intelligence — same Civic Prism design language as our mobile app.
                         On this demo, uploads are processed on the server you run.
                     </p>
+                    <p class="civiclens-hero-source">
+                        <a href="{CIVICLENS_GITHUB_REPO}" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -1136,6 +1274,19 @@ against each requirement.
                     elem_classes=["civiclens-intro"],
                 )
 
+                with gr.Column(elem_classes=["civic-track-a-cta"]):
+                    analyze_btn_a = gr.Button(
+                        "Analyze Documents",
+                        variant="primary",
+                        size="lg",
+                        elem_classes=["civic-analyze-primary"],
+                    )
+                    gr.Markdown(
+                        "This demo uses **Hugging Face inference**, not the deployed **Gemma / E2B** path used "
+                        "on device. Model and runtime differ, so results may vary from other CivicLens builds.",
+                        elem_classes=["civiclens-inference-note"],
+                    )
+
                 with gr.Row():
                     with gr.Column(scale=1):
                         notice_input = gr.File(
@@ -1144,7 +1295,7 @@ against each requirement.
                             file_types=[".pdf", ".jpg", ".jpeg", ".png"],
                         )
                         sample_notice_btn = gr.Button(
-                            "Load sample (D01)",
+                            "Load sample — DTA Notice",
                             size="sm",
                             variant="secondary",
                         )
@@ -1154,20 +1305,9 @@ against each requirement.
                             file_types=[".pdf", ".jpg", ".jpeg", ".png"],
                         )
                         sample_supporting_btn = gr.Button(
-                            "Load sample (D03)",
+                            "Load sample — Paystub",
                             size="sm",
                             variant="secondary",
-                        )
-
-                        analyze_btn_a = gr.Button(
-                            "Analyze Documents",
-                            variant="primary",
-                            size="lg",
-                        )
-                        gr.Markdown(
-                            "This demo uses **Hugging Face inference**, not the deployed **Gemma / E2B** path used "
-                            "on device. Model and runtime differ, so results may vary from other CivicLens builds.",
-                            elem_classes=["civiclens-inference-note"],
                         )
 
                         doc2_input = gr.File(
@@ -1182,7 +1322,12 @@ against each requirement.
                         )
 
                     with gr.Column(scale=2):
-                        results_html_a = gr.HTML(label="Results")
+                        results_html_a = gr.HTML(
+                            label="Results",
+                            elem_id="civic-results-snap",
+                            elem_classes=["civic-results-html"],
+                            min_height=200,
+                        )
                         with gr.Accordion("Raw JSON Output", open=False, elem_classes=["civic-json-accordion"]):
                             json_output_a = gr.Code(label="JSON", language="json")
 
@@ -1190,6 +1335,7 @@ against each requirement.
                     fn=process_track_a,
                     inputs=[notice_input, doc1_input, doc2_input, doc3_input],
                     outputs=[results_html_a, json_output_a],
+                    show_progress="minimal",
                     show_progress_on=results_html_a,
                 )
                 sample_notice_btn.click(
@@ -1254,7 +1400,12 @@ CivicLens checks against the four BPS requirements:
                         )
 
                     with gr.Column(scale=2):
-                        results_html_b = gr.HTML(label="Results")
+                        results_html_b = gr.HTML(
+                            label="Results",
+                            elem_id="civic-results-bps",
+                            elem_classes=["civic-results-html"],
+                            min_height=200,
+                        )
                         with gr.Accordion("Raw JSON Output", open=False, elem_classes=["civic-json-accordion"]):
                             json_output_b = gr.Code(label="JSON", language="json")
 
@@ -1262,15 +1413,18 @@ CivicLens checks against the four BPS requirements:
                     fn=process_track_b,
                     inputs=[b_doc1, b_doc2, b_doc3, b_doc4, b_doc5],
                     outputs=[results_html_b, json_output_b],
+                    show_progress="minimal",
                     show_progress_on=results_html_b,
                 )
 
-    gr.HTML("""
+    gr.HTML(f"""
     <div class="privacy-footer">
         <p><strong>Privacy Notice:</strong> This web demo sends your uploads to whatever inference backend
         configures this deployment (hosted API or server-side model).</p>
         <p>For strongest privacy — documents stay on your phone — use the <strong>CivicLens</strong>
         mobile app with on-device inference.</p>
+        <p class="privacy-footer-source"><a href="{CIVICLENS_GITHUB_REPO}" target="_blank"
+        rel="noopener noreferrer">View source on GitHub</a></p>
     </div>
     """)
 
