@@ -82,9 +82,11 @@ enum InferenceMode {
   auto,
 }
 
-/// Track A can need ~4k chars of OCR (notice + two pay stubs) plus preamble; keep
-/// under `nCtx` with room for output (see llama_client nBatch/nCtx).
-const int _kMaxLocalLlmPromptChars = 5600;
+/// Track A can need ~5k chars of OCR (notice + two pay stubs) plus preamble; keep
+/// under `nCtx` (4096 tokens ≈ 14k chars) with room for 2048 output tokens.
+/// Full-res HEIC captures produce 3000+ chars of notice OCR; the old 5600 limit
+/// caused the deadline date (often in the letter body) to be silently truncated.
+const int _kMaxLocalLlmPromptChars = 8000;
 
 /// High-level service for document analysis inference
 class InferenceService {
@@ -235,7 +237,7 @@ class InferenceService {
     final llmStopwatch = Stopwatch()..start();
     final response = await _localClient.chat(
       prompt: prompt,
-      maxTokens: 1400,
+      maxTokens: 2048,
       onProgress: onLlmProgress,
     );
     llmStopwatch.stop();
@@ -333,13 +335,15 @@ class InferenceService {
   /// body below the letterhead. Supporting docs were at 600 chars, which cut
   /// typical pay stubs (~1k OCR) and injected `[... text truncated...]` — the model
   /// then told users the "document" was truncated. Use ~1100 per supporting doc.
+  /// Notice cap raised from 2000 → 3500: full-res HEIC captures produce 3000+ chars
+  /// and the deadline date is frequently in the letter body past char 2000.
   String _formatOcrResultsTrackA(
     Map<int, String> results,
     List<String> descriptions,
   ) {
-    const noticeMax = 2000;
+    const noticeMax = 3500;
     const supportingMax = 1100;
-    const maxTotalChars = 4200;
+    const maxTotalChars = 5800;
     final buffer = StringBuffer();
     var total = 0;
     final n = results.length;
@@ -537,7 +541,7 @@ class InferenceService {
     final llmStopwatch = Stopwatch()..start();
     final response = await _localClient.chat(
       prompt: prompt,
-      maxTokens: 1400,
+      maxTokens: 2048,
       onProgress: onLlmProgress,
     );
     llmStopwatch.stop();
@@ -761,6 +765,58 @@ class InferenceService {
     return response.rawText;
   }
 
+  /// Eval diagnostic: same as [inferRaw] but also returns the raw ML Kit OCR
+  /// text so callers (eval server, notebook) can inspect what the model actually
+  /// received and compare against Tesseract / off-device vision results.
+  Future<InferRawWithOcrResult> inferRawWithOcr({
+    required Uint8List imageBytes,
+    required String prompt,
+    double temperature = 0.0,
+    int? tokenBudget,
+  }) async {
+    if (!isReady) {
+      throw StateError('Inference service not initialized');
+    }
+
+    final maxTokens = tokenBudget ?? 2048;
+    var userContent = prompt.trim();
+
+    final ocrSw = Stopwatch()..start();
+    String ocrText = '';
+    if (imageBytes.isNotEmpty) {
+      final ocr = await _ocrService.extractText(imageBytes);
+      ocrText = ocr.text;
+      if (ocrText.trim().isNotEmpty) {
+        userContent =
+            '$userContent\n\n--- Extracted document text (OCR) ---\n$ocrText';
+      }
+    }
+    ocrSw.stop();
+
+    var fullPrompt = userContent.contains('<start_of_turn>')
+        ? userContent
+        : '<start_of_turn>user\n$userContent\n<end_of_turn>\n<start_of_turn>model\n';
+    fullPrompt = _clampPromptForLocalLlm(fullPrompt);
+
+    final llmSw = Stopwatch()..start();
+    final response = await _localClient.chat(
+      prompt: fullPrompt,
+      temperature: temperature,
+      maxTokens: maxTokens,
+    );
+    llmSw.stop();
+
+    if (!response.isSuccess) {
+      throw StateError(response.errorMessage ?? 'Inference failed');
+    }
+    return InferRawWithOcrResult(
+      rawText: response.rawText ?? '',
+      ocrText: ocrText,
+      ocrElapsedMs: ocrSw.elapsedMilliseconds,
+      llmElapsedMs: llmSw.elapsedMilliseconds,
+    );
+  }
+
   /// Eval only: production-aligned notice preview ([PromptTemplates.trackANoticePreviewOnly])
   /// then a second LLM pass with [extractionPrompt], OCR, and raw preview output.
   Future<InferRawNoticePreviewResult> inferRawWithNoticePreview({
@@ -845,6 +901,14 @@ class InferenceService {
     );
   }
 
+  /// Runs ML Kit OCR on [imageBytes] and returns the extracted text.
+  /// Used by the eval server's `/infer_track_a` endpoint to measure OCR output
+  /// char count without duplicating the internal [_ocrService] reference.
+  Future<String> extractOcrText(Uint8List imageBytes) async {
+    final result = await _ocrService.extractText(imageBytes);
+    return result.text;
+  }
+
   void dispose() {
     _localClient.dispose();
     _ocrService.dispose();
@@ -866,6 +930,23 @@ class InferRawNoticePreviewResult {
   final int extractElapsedMs;
 
   int get totalElapsedMs => previewElapsedMs + extractElapsedMs;
+}
+
+/// Eval harness: LLM response + raw ML Kit OCR text for diagnostics.
+class InferRawWithOcrResult {
+  const InferRawWithOcrResult({
+    required this.rawText,
+    required this.ocrText,
+    required this.ocrElapsedMs,
+    required this.llmElapsedMs,
+  });
+
+  final String rawText;
+
+  /// Raw ML Kit OCR output before any clamping or formatting.
+  final String ocrText;
+  final int ocrElapsedMs;
+  final int llmElapsedMs;
 }
 
 void _inferenceDiag(String line) {

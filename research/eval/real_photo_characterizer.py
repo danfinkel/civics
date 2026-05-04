@@ -35,10 +35,13 @@ if str(_EVAL_DIR) not in sys.path:
 
 from prompt_conditions import build_prompt_semantic
 from runner import (
+    eval_server_preflight,
     load_ground_truth,
     parse_with_retry,
     run_inference,
+    run_inference_track_a,
     score_prompt_ablation_row,
+    score_track_a_production,
 )
 
 try:
@@ -347,14 +350,33 @@ def list_photo_files(photo_dir: Path) -> list[Path]:
     return out
 
 
+def _jpeg_dest_is_already_source(photo: Path, dest: Path) -> bool:
+    """Avoid shutil.copy2(src, dst) SameFileError (same inode or equivalent path)."""
+    try:
+        src = photo.expanduser().resolve(strict=False)
+        dst = dest.expanduser().resolve(strict=False)
+        if src == dst:
+            return True
+        if src.is_file() and dst.is_file():
+            try:
+                return os.path.samefile(src, dst)
+            except OSError:
+                return False
+    except OSError:
+        pass
+    return False
+
+
 def ensure_jpeg(photo: Path, converted_dir: Path, quality: int = 85) -> Path:
     converted_dir.mkdir(parents=True, exist_ok=True)
     suf = photo.suffix.lower()
     if suf in (".heic", ".heif"):
         return heic_to_jpeg(photo, converted_dir, quality=quality)
     if suf in (".jpg", ".jpeg"):
-        dest = converted_dir / photo.name
-        shutil.copy2(photo, dest)
+        dest = (converted_dir / photo.name).resolve(strict=False)
+        if _jpeg_dest_is_already_source(photo, dest):
+            return dest
+        shutil.copy2(photo.expanduser(), dest)
         return dest
     raise ValueError(f"Unsupported image type: {photo}")
 
@@ -482,12 +504,93 @@ def call_ollama(
     return str((data.get("message") or {}).get("content") or "")
 
 
+def call_ollama_text_only(
+    prompt: str,
+    model: str = DEFAULT_OLLAMA_MODEL,
+    temperature: float = 0.0,
+    timeout_s: float = DEFAULT_OLLAMA_TIMEOUT_S,
+    num_predict: int = 2048,
+) -> str:
+    """
+    Text-only Ollama chat (no ``images``), with bounded generation.
+
+    On-device eval uses the same pattern: OCR + instructions in the prompt string, then
+    llama.cpp stops after ``maxTokens`` output tokens. Map that to Ollama via
+    ``options.num_predict`` (default 2048 to match ``inferRaw``).
+    """
+    url = f"{OLLAMA_BASE.rstrip('/')}/api/chat"
+    opts: dict = {"temperature": temperature}
+    if num_predict > 0:
+        opts["num_predict"] = int(num_predict)
+    payload: dict = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": False,
+        "options": opts,
+    }
+    print(
+        "  HTTP POST /api/chat (text-only, num_predict=%s; heartbeat every 15s)."
+        % (num_predict if num_predict > 0 else "unlimited"),
+        flush=True,
+    )
+    stop = threading.Event()
+    hb = threading.Thread(
+        target=_ollama_heartbeat,
+        args=(stop, 15.0, "Ollama"),
+        daemon=True,
+    )
+    hb.start()
+    r: requests.Response | None = None
+    try:
+        r = requests.post(
+            url,
+            json=payload,
+            timeout=(30.0, float(timeout_s)),
+        )
+    except requests.exceptions.Timeout as e:
+        print(f"Ollama HTTP read timeout (>{timeout_s}s): {e}", file=sys.stderr)
+        return ""
+    except requests.RequestException as e:
+        print(f"Ollama HTTP request failed: {e}", file=sys.stderr)
+        return ""
+    finally:
+        stop.set()
+    if r is None or not r.ok:
+        sc = r.status_code if r is not None else "?"
+        err = (r.text if r is not None else "")[:2000]
+        print(f"Ollama /api/chat HTTP {sc}: {err}", file=sys.stderr)
+        return ""
+    try:
+        data = r.json()
+    except json.JSONDecodeError:
+        print(f"Ollama: invalid JSON in response: {r.text[:500]!r}", file=sys.stderr)
+        return ""
+    return str((data.get("message") or {}).get("content") or "")
+
+
 def eval_server_url(phone_ip: str | None) -> str:
+    """Return base URL for eval HTTP server (no trailing slash).
+
+    Accepts ``host`` or ``host:port`` or a full ``http://...`` URL. Port defaults
+    to 8080 so ``127.0.0.1`` and ``127.0.0.1:8080`` (USB iproxy) both work.
+    """
+
+    def normalize(s: str) -> str:
+        t = s.strip()
+        if not t:
+            return ""
+        if t.startswith("http://") or t.startswith("https://"):
+            return t.rstrip("/")
+        # host:port — don't append :8080 twice
+        if ":" in t and t.rsplit(":", 1)[-1].isdigit():
+            return f"http://{t}"
+        return f"http://{t}:8080"
+
     if phone_ip and phone_ip.strip():
-        return f"http://{phone_ip.strip()}:8080"
+        return normalize(phone_ip)
     ip = os.environ.get("PHONE_IP", "").strip()
     if ip:
-        return f"http://{ip}:8080"
+        return normalize(ip)
     return ""
 
 
@@ -495,7 +598,15 @@ def call_eval_server_infer(
     phone_ip: str | None,
     prompt: str,
     image_b64: str,
-) -> str:
+    include_ocr_diag: bool = True,
+    timeout: int = 120,
+    temperature: float = 0.0,
+) -> dict:
+    """Call /infer and return a dict with 'response', 'ocr_text', 'ocr_chars'.
+
+    Always requests OCR text by default so the batch harness can write
+    ocr_chars to eval_runs.csv for correlation analysis.
+    """
     base = eval_server_url(phone_ip)
     if not base:
         print(
@@ -504,11 +615,23 @@ def call_eval_server_infer(
         )
         sys.exit(1)
     out = run_inference(
-        base, image_b64, prompt, track="a", temperature=0.0, timeout=120
+        base,
+        image_b64,
+        prompt,
+        track="a",
+        temperature=temperature,
+        timeout=timeout,
+        include_ocr_diag=include_ocr_diag,
     )
     if out.get("error"):
-        return ""
-    return str(out.get("response") or "")
+        print(f"  [eval-server] error: {out['error']}", file=sys.stderr)
+        return {"response": "", "ocr_text": "", "ocr_chars": 0}
+    ocr = str(out.get("ocr_text") or "")
+    return {
+        "response": str(out.get("response") or ""),
+        "ocr_text": ocr,
+        "ocr_chars": len(ocr),
+    }
 
 
 def score_against_ground_truth(
@@ -546,6 +669,8 @@ def run_extraction(
     else:
         image_b64 = base64.b64encode(jpeg_path.read_bytes()).decode("ascii")
 
+    base_url = eval_server_url(phone_ip) if backend == "eval-server" else ""
+
     results: list[dict] = []
     for i in range(n_runs):
         if i > 0:
@@ -557,19 +682,59 @@ def run_extraction(
                 temperature=ollama_temperature,
                 timeout_s=ollama_timeout_s,
             )
+            ocr_text = ""
+            ocr_chars = 0
+            parsed = parse_with_retry(raw)
+            scored = score_against_ground_truth("D01", parsed, gt)
+            rd = scored.get("response_deadline") or {}
+            critical_label = rd.get("label")
+            notice_summary = None
+            notice_deadline = ""
+            notice_deadline_chars = 0
         else:
-            raw = call_eval_server_infer(phone_ip, D01_SEMANTIC_PROMPT, image_b64)
-        parsed = parse_with_retry(raw)
-        scored = score_against_ground_truth("D01", parsed, gt)
-        rd = scored.get("response_deadline") or {}
-        label = rd.get("label")
+            # Use the production-accurate /infer_track_a endpoint.
+            # This calls analyzeTrackAWithOcr (same prompt, same OCR formatter, same token budget
+            # as the production app) so eval results directly reflect real on-device behaviour.
+            infer = run_inference_track_a(
+                base_url,
+                image_b64,
+                supporting_labels=[],
+                timeout=int(ollama_timeout_s),
+            )
+            raw = infer["response"]
+            ocr_chars = infer["ocr_chars"]
+            ocr_text = ""  # OCR text not returned by /infer_track_a (only char count)
+            notice_summary = infer.get("notice_summary")
+            notice_deadline = infer.get("notice_deadline", "")
+            notice_deadline_chars = len(notice_deadline)
+
+            crit = score_track_a_production(infer, "D01", gt)
+            critical_label = crit["critical_label"]
+
+            # Build a flat scores dict compatible with flatten_extraction_run:
+            # map the production critical field onto "response_deadline" so the
+            # existing CSV column names stay consistent across backends.
+            scored = {
+                "response_deadline": {
+                    "label": critical_label,
+                    "score": crit["critical_score"],
+                    "correct_field": critical_label not in ("misattribution", "hallucinated"),
+                }
+            }
+            parsed = None  # production schema has no flat JSON to re-parse
+
         results.append(
             {
                 "run": i,
                 "raw_response": raw,
                 "parsed": parsed,
                 "scores": scored,
-                "critical_deadline_exact": label == "exact",
+                "critical_deadline_exact": critical_label == "exact",
+                "ocr_text": ocr_text,
+                "ocr_chars": ocr_chars,
+                "notice_summary": notice_summary,
+                "notice_deadline": notice_deadline,
+                "notice_deadline_chars": notice_deadline_chars,
             }
         )
     return results
@@ -581,6 +746,11 @@ def flatten_extraction_run(filename: str, item: dict) -> dict:
         "filename": filename,
         "run": int(item.get("run", 0)),
         "critical_deadline_exact": bool(item.get("critical_deadline_exact", False)),
+        # OCR diagnostics (eval-server only; 0 for ollama)
+        "ocr_chars": int(item.get("ocr_chars", 0)),
+        # Production Track A fields (eval-server /infer_track_a only; "" / 0 for ollama)
+        "notice_deadline": str(item.get("notice_deadline", "")),
+        "notice_deadline_chars": int(item.get("notice_deadline_chars", 0)),
     }
     scores = item.get("scores") or {}
     for k, v in scores.items():
@@ -843,12 +1013,21 @@ def main() -> None:
         "--backend",
         choices=["ollama", "eval-server"],
         default="ollama",
-        help="ollama = Gemma4 E4B local; eval-server = on-device E2B",
+        help=(
+            "ollama = Gemma4 E4B vision (local Ollama); "
+            "eval-server = on-device Gemma 4 E2B via USB tunnel "
+            "(iproxy 8080 8080 + --dart-define=EVAL_MODE=true build). "
+            "eval-server is the production-accurate path."
+        ),
     )
     parser.add_argument(
         "--phone-ip",
-        default=os.environ.get("PHONE_IP", ""),
-        help="iPhone IP for eval-server (or set PHONE_IP)",
+        default=os.environ.get("PHONE_IP", "127.0.0.1"),
+        help=(
+            "Host (or host:port) of the eval HTTP server. "
+            "Default '127.0.0.1' works with USB tunnel (iproxy 8080 8080). "
+            "Pass a LAN IP for Wi-Fi."
+        ),
     )
     parser.add_argument("--runs-per-photo", type=int, default=3)
     parser.add_argument(
@@ -902,6 +1081,24 @@ def main() -> None:
         sys.exit(1)
 
     gt = load_ground_truth()
+
+    if args.backend == "eval-server" and not args.attributes_only:
+        base_url = eval_server_url(args.phone_ip or None)
+        if not base_url:
+            print(
+                "eval-server requires --phone-ip (or PHONE_IP env var). "
+                "For USB: run `iproxy 8080 8080` and use --phone-ip 127.0.0.1",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        print(f"Checking eval server at {base_url} … ", end="", flush=True)
+        try:
+            health = eval_server_preflight(base_url)
+            print(f"ok ({health.get('model','?')})")
+        except RuntimeError as e:
+            print("FAILED", file=sys.stderr)
+            print(str(e), file=sys.stderr)
+            sys.exit(1)
 
     rows: list[dict] = []
     run_rows: list[dict] = []

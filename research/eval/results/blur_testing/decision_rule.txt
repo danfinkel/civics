@@ -1,9 +1,9 @@
 Best single-attribute rule:
-  histogram_entropy < 5.14
+  center_edge_density ≥ 0.02
   Accuracy: 0.88 (30/34 photos)
 
 Current detector (laplacian_variance):
   laplacian_variance ≥ 24.48
-  Accuracy: 0.77 (26/34 photos)
+  Accuracy: 0.82 (28/34 photos)
 
-Improvement: +12 percentage points
+Improvement: +6 percentage points

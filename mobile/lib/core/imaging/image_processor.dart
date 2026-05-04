@@ -5,8 +5,10 @@ import 'package:path/path.dart' as path;
 
 /// Processes images for document analysis
 class ImageProcessor {
-  // Maximum dimension for processed images
-  static const int _maxDimension = 1024;
+  // Maximum dimension for processed images.
+  // 2048px gives ML Kit enough resolution to read small fonts on government notices
+  // without materially increasing inference time (OCR output is text, not pixels).
+  static const int _maxDimension = 2048;
   // JPEG quality for output
   static const int _jpegQuality = 85;
 

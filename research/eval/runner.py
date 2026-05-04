@@ -662,6 +662,42 @@ def parse_with_retry(raw: str) -> dict | None:
         return None
 
 
+def _eval_reachability_help(base: str, exc: BaseException) -> str:
+    return (
+        f"Could not reach eval server at {base}/health ({exc}).\n\n"
+        "Most common fixes (iPhone + USB / iproxy):\n"
+        "  • Build/run with eval mode: cd mobile && ./scripts/dev_deploy.sh --eval "
+        "then Xcode → Product → Run "
+        "(or flutter run ... --dart-define=EVAL_MODE=true).\n"
+        "  • In the Xcode/Debug console look for: Eval mode: HTTP server on :8080\n"
+        "    If you see inference failed to initialize instead, the HTTP server "
+        "never starts — finish the on-device model download (--push-model) or fix init.\n"
+        "  • Keep a tunnel open: iproxy 8080 8080  (notebook → http://127.0.0.1:8080)\n"
+        "  • Use PHONE_IP = '127.0.0.1' (host only); port :8080 is added automatically.\n"
+        "  • iproxy 'Connection refused' + notebook Connection reset by peer = nothing "
+        "listening on device :8080 (eval build not running or model init failed).\n"
+    )
+
+
+def eval_server_preflight(phone_url: str, timeout: float = 8.0) -> dict:
+    """GET /health — raises RuntimeError if the eval app is not up or unreachable."""
+    base = phone_url.rstrip("/")
+    try:
+        r = requests.get(f"{base}/health", timeout=timeout)
+        r.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(_eval_reachability_help(base, e)) from e
+    try:
+        data = r.json()
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"{base}/health returned non-JSON: {r.text[:240]!r}"
+        ) from exc
+    if data.get("status") != "ok":
+        raise RuntimeError(f"{base}/health unexpected JSON: {data!r}")
+    return data
+
+
 def run_inference(
     phone_url: str,
     image_b64: str,
@@ -671,6 +707,7 @@ def run_inference(
     token_budget: int | None = None,
     timeout: int = 120,
     notice_preview_first: bool = False,
+    include_ocr_diag: bool = False,
 ) -> dict:
     payload: dict = {
         "image": image_b64,
@@ -678,6 +715,7 @@ def run_inference(
         "track": track,
         "temperature": temperature,
         "notice_preview_first": notice_preview_first,
+        "include_ocr_diag": include_ocr_diag,
     }
     if token_budget is not None:
         payload["token_budget"] = token_budget
@@ -698,6 +736,9 @@ def run_inference(
             "error": None,
             "preview_elapsed_ms": data.get("preview_elapsed_ms"),
             "extract_elapsed_ms": data.get("extract_elapsed_ms"),
+            "ocr_text": data.get("ocr_text"),
+            "ocr_elapsed_ms": data.get("ocr_elapsed_ms"),
+            "llm_elapsed_ms": data.get("llm_elapsed_ms"),
         }
         return out
     except requests.exceptions.Timeout:
@@ -708,16 +749,139 @@ def run_inference(
             "error": "timeout",
             "preview_elapsed_ms": None,
             "extract_elapsed_ms": None,
+            "ocr_text": None,
+            "ocr_elapsed_ms": None,
+            "llm_elapsed_ms": None,
         }
     except Exception as e:
+        err = str(e)
+        if isinstance(e, requests.exceptions.ConnectionError):
+            err = f"{e}\n\n" + _eval_reachability_help(phone_url.rstrip("/"), e)
         return {
             "response": "",
             "elapsed_ms": int((time.time() - t0) * 1000),
             "parse_ok": False,
-            "error": str(e),
+            "error": err,
             "preview_elapsed_ms": None,
             "extract_elapsed_ms": None,
+            "ocr_text": None,
+            "ocr_elapsed_ms": None,
+            "llm_elapsed_ms": None,
         }
+
+
+def run_inference_track_a(
+    phone_url: str,
+    image_b64: str,
+    supporting_labels: list[str] | None = None,
+    timeout: int = 180,
+) -> dict:
+    """POST /infer_track_a — production-accurate pipeline (analyzeTrackAWithOcr).
+
+    Returns a dict with keys:
+        response        — raw LLM text
+        notice_summary  — parsed dict (deadline, requested_categories, consequence) or None
+        notice_deadline — str extracted from notice_summary.deadline (or "")
+        proof_pack      — list of proof-pack rows or []
+        action_summary  — str
+        ocr_chars       — int (ML Kit OCR char count for the notice image)
+        elapsed_ms      — int
+        parse_ok        — bool (True if notice_summary was returned by device)
+        error           — str or None
+    """
+    payload: dict = {
+        "image": image_b64,
+        "supporting_labels": supporting_labels or [],
+    }
+
+    t0 = time.time()
+    try:
+        r = requests.post(
+            f"{phone_url}/infer_track_a", json=payload, timeout=timeout
+        )
+        r.raise_for_status()
+        data = r.json()
+        notice_summary = data.get("notice_summary") or {}
+        notice_deadline = notice_summary.get("deadline", "") if isinstance(notice_summary, dict) else ""
+        return {
+            "response": data.get("response", ""),
+            "notice_summary": notice_summary,
+            "notice_deadline": notice_deadline,
+            "proof_pack": data.get("proof_pack") or [],
+            "action_summary": data.get("action_summary", ""),
+            "ocr_chars": data.get("ocr_chars", 0),
+            "elapsed_ms": data.get("elapsed_ms", int((time.time() - t0) * 1000)),
+            "parse_ok": bool(data.get("parse_ok")),
+            "error": data.get("error"),
+        }
+    except requests.exceptions.Timeout:
+        return {
+            "response": "",
+            "notice_summary": None,
+            "notice_deadline": "",
+            "proof_pack": [],
+            "action_summary": "",
+            "ocr_chars": 0,
+            "elapsed_ms": timeout * 1000,
+            "parse_ok": False,
+            "error": "timeout",
+        }
+    except Exception as e:
+        err = str(e)
+        if isinstance(e, requests.exceptions.ConnectionError):
+            err = f"{e}\n\n" + _eval_reachability_help(phone_url.rstrip("/"), e)
+        return {
+            "response": "",
+            "notice_summary": None,
+            "notice_deadline": "",
+            "proof_pack": [],
+            "action_summary": "",
+            "ocr_chars": 0,
+            "elapsed_ms": int((time.time() - t0) * 1000),
+            "parse_ok": False,
+            "error": err,
+        }
+
+
+def score_track_a_production(
+    infer_result: dict,
+    artifact_id: str,
+    gt: dict[str, dict[str, str]],
+) -> dict:
+    """Score a /infer_track_a result against ground truth.
+
+    Extracts ``notice_summary.deadline`` and scores it against the
+    ``response_deadline`` field in ground truth using the same rubric as
+    the existing ``score_field`` helpers.
+
+    Returns a dict with keys:
+        critical_field      — "notice_summary.deadline"
+        critical_expected   — expected deadline string from GT
+        critical_extracted  — deadline from notice_summary
+        critical_label      — score label (exact / partial / missing / …)
+        critical_score      — numeric score (−1…2)
+        ocr_chars           — OCR char count from the infer result
+    """
+    fields_gt = gt.get(artifact_id, {})
+    exp_deadline = fields_gt.get("response_deadline", "")
+    extracted_deadline = infer_result.get("notice_deadline", "")
+
+    crit_sf = score_field(
+        extracted_deadline or None,
+        exp_deadline,
+        field_name="notice_summary.deadline",
+        all_extracted={"notice_summary.deadline": extracted_deadline},
+        gt_by_field={"notice_summary.deadline": exp_deadline},
+        ground_truth_raw=exp_deadline,
+    )
+    return {
+        "critical_field": "notice_summary.deadline",
+        "critical_expected": exp_deadline,
+        "critical_extracted": extracted_deadline,
+        "critical_label": crit_sf["label"],
+        "critical_score": crit_sf["score"],
+        "ocr_chars": infer_result.get("ocr_chars", 0),
+    }
 
 
 def run_experiment(
