@@ -140,6 +140,10 @@ def deploy(*, force_rebuild: bool = False):
         # Demo sample JPGs (Dockerfile COPY sample_docs ./sample_docs — must be in staged upload)
         "sample_docs/D01-clean.jpg",
         "sample_docs/D03-clean.jpg",
+        "sample_docs/D05-clean-raster.jpg",
+        "sample_docs/D12-clean-raster.jpg",
+        "sample_docs/D13-clean-raster.jpg",
+        "sample_docs/D14-clean-raster.jpg",
         "Dockerfile",
         "README.md",
         "requirements.txt",

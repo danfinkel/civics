@@ -34,6 +34,11 @@ _SAMPLE_DIR = _WEB_DIR / "sample_docs"
 # Track A SNAP: bundled demo JPGs for “Load sample” (also copied in Dockerfile for HF Spaces).
 SAMPLE_TRACK_A_NOTICE_JPG = _SAMPLE_DIR / "D01-clean.jpg"
 SAMPLE_TRACK_A_SUPPORTING_JPG = _SAMPLE_DIR / "D03-clean.jpg"
+# Track B BPS: synthetic artifacts (see research/artifacts/clean/)
+SAMPLE_TRACK_B_PROOF_AGE_JPG = _SAMPLE_DIR / "D12-clean-raster.jpg"
+SAMPLE_TRACK_B_RESIDENCY_1_JPG = _SAMPLE_DIR / "D14-clean-raster.jpg"
+SAMPLE_TRACK_B_RESIDENCY_2_JPG = _SAMPLE_DIR / "D05-clean-raster.jpg"
+SAMPLE_TRACK_B_VACCINE_JPG = _SAMPLE_DIR / "D13-clean-raster.jpg"
 
 
 def _sample_jpg_path_or_error(path: Path) -> str:
@@ -51,6 +56,22 @@ def load_sample_track_a_notice() -> str:
 
 def load_sample_track_a_supporting() -> str:
     return _sample_jpg_path_or_error(SAMPLE_TRACK_A_SUPPORTING_JPG)
+
+
+def load_sample_track_b_proof_of_age() -> str:
+    return _sample_jpg_path_or_error(SAMPLE_TRACK_B_PROOF_AGE_JPG)
+
+
+def load_sample_track_b_residency_1() -> str:
+    return _sample_jpg_path_or_error(SAMPLE_TRACK_B_RESIDENCY_1_JPG)
+
+
+def load_sample_track_b_residency_2() -> str:
+    return _sample_jpg_path_or_error(SAMPLE_TRACK_B_RESIDENCY_2_JPG)
+
+
+def load_sample_track_b_vaccine() -> str:
+    return _sample_jpg_path_or_error(SAMPLE_TRACK_B_VACCINE_JPG)
 
 
 # Mirrors mobile AppColors (+ existing web demo hues)
@@ -554,7 +575,7 @@ gradio-app .civic-file-slot {{
     opacity: 1;
 }}
 
-/* Track A: full-width Analyze CTA above the upload / results split */
+/* SNAP + School tabs: full-width primary CTA above the upload / results split */
 #civiclens-app .civic-track-a-cta {{
     width: 100%;
     padding: 4px 0 12px;
@@ -1201,9 +1222,9 @@ def _format_results_placeholder(message: str) -> str:
     return f'<p class="civiclens-results-hint">{html.escape(message)}</p>'
 
 
-def process_track_a(notice, doc1, doc2, doc3):
-    """Process Track A documents and return formatted results."""
-    if not any(coerce_track_a_files(notice, doc1, doc2, doc3)):
+def process_track_a(notice, doc1):
+    """Process Track A documents and return formatted results (demo: notice + one supporting doc)."""
+    if not any(coerce_track_a_files(notice, doc1, None, None)):
         return (
             _format_results_placeholder(
                 "Upload at least one document (your DTA notice first, if you have it)."
@@ -1211,18 +1232,18 @@ def process_track_a(notice, doc1, doc2, doc3):
             "",
         )
 
-    result = run_track_a(notice, doc1, doc2, doc3)
+    result = run_track_a(notice, doc1, None, None)
     html_output = format_track_a_results(result)
     json_output = json.dumps(result.get("parsed", {}), indent=2) if result.get("parsed") else result.get("raw_response", "")
     return html_output, json_output
 
 
-def process_track_b(doc1, doc2, doc3, doc4, doc5):
-    """Process Track B documents and return formatted results."""
-    if not any(coerce_track_b_files(doc1, doc2, doc3, doc4, doc5)):
+def process_track_b(doc1, doc2, doc3, doc4):
+    """Process Track B documents and return formatted results (demo: four required slots, no grade doc)."""
+    if not any(coerce_track_b_files(doc1, doc2, doc3, doc4, None)):
         return _format_results_placeholder("Please upload at least one document to begin."), ""
 
-    result = run_track_b(doc1, doc2, doc3, doc4, doc5)
+    result = run_track_b(doc1, doc2, doc3, doc4, None)
     html_output = format_track_b_results(result)
     json_output = json.dumps(result.get("parsed", {}), indent=2) if result.get("parsed") else result.get("raw_response", "")
     return html_output, json_output
@@ -1267,8 +1288,8 @@ with gr.Blocks(
                     """
 ### SNAP document assistant
 
-Upload your **DTA notice** first, then **supporting documents** (pay stubs, lease, etc.).
-CivicLens reads the notice for deadlines and required proof, then checks your uploads
+Upload your **DTA notice**, then **one supporting document** (e.g. pay stub or lease).
+CivicLens reads the notice for deadlines and required proof, then checks your upload
 against each requirement.
 """,
                     elem_classes=["civiclens-intro"],
@@ -1282,8 +1303,13 @@ against each requirement.
                         elem_classes=["civic-analyze-primary"],
                     )
                     gr.Markdown(
-                        "This demo uses **Hugging Face inference**, not the deployed **Gemma / E2B** path used "
-                        "on device. Model and runtime differ, so results may vary from other CivicLens builds.",
+                        (
+                            "This demo uses **Hugging Face inference**, not the deployed **Gemma / E2B** path used "
+                            "on device. Model and runtime differ, so results may vary from other CivicLens builds.\n\n"
+                            "To run the demo you can load the sample documents (**Load sample** under each slot) "
+                            "or upload your own DTA notice and supporting document. "
+                            "Then click **Analyze Documents** to see the results."
+                        ),
                         elem_classes=["civiclens-inference-note"],
                     )
 
@@ -1310,17 +1336,6 @@ against each requirement.
                             variant="secondary",
                         )
 
-                        doc2_input = gr.File(
-                            elem_classes=["civic-file-slot"],
-                            label="3. Supporting document (optional)",
-                            file_types=[".pdf", ".jpg", ".jpeg", ".png"],
-                        )
-                        doc3_input = gr.File(
-                            elem_classes=["civic-file-slot"],
-                            label="4. Supporting document (optional)",
-                            file_types=[".pdf", ".jpg", ".jpeg", ".png"],
-                        )
-
                     with gr.Column(scale=2):
                         results_html_a = gr.HTML(
                             label="Results",
@@ -1333,7 +1348,7 @@ against each requirement.
 
                 analyze_btn_a.click(
                     fn=process_track_a,
-                    inputs=[notice_input, doc1_input, doc2_input, doc3_input],
+                    inputs=[notice_input, doc1_input],
                     outputs=[results_html_a, json_output_a],
                     show_progress="minimal",
                     show_progress_on=results_html_a,
@@ -1360,43 +1375,67 @@ CivicLens checks against the four BPS requirements:
 - Proof of child's age
 - Two proofs of residency from **different** categories
 - Current immunization record
-- Grade indicator (optional)
 """,
                     elem_classes=["civiclens-intro"],
                 )
+
+                with gr.Column(elem_classes=["civic-track-a-cta"]):
+                    analyze_btn_b = gr.Button(
+                        "Check My Packet",
+                        variant="primary",
+                        size="lg",
+                        elem_classes=["civic-analyze-primary"],
+                    )
+                    gr.Markdown(
+                        (
+                            "This demo uses **Hugging Face inference**, not the deployed **Gemma / E2B** path used "
+                            "on device. Model and runtime differ, so results may vary from other CivicLens builds.\n\n"
+                            "Use **Load sample** under each slot or upload your own files, then click **Check My Packet**."
+                        ),
+                        elem_classes=["civiclens-inference-note"],
+                    )
 
                 with gr.Row():
                     with gr.Column(scale=1):
                         b_doc1 = gr.File(
                             elem_classes=["civic-file-slot"],
-                            label="Document 1 (required)",
+                            label="1. Proof of age (required)",
                             file_types=[".pdf", ".jpg", ".jpeg", ".png"],
+                        )
+                        sample_b_age_btn = gr.Button(
+                            "Load sample — Proof of age",
+                            size="sm",
+                            variant="secondary",
                         )
                         b_doc2 = gr.File(
                             elem_classes=["civic-file-slot"],
-                            label="Document 2",
+                            label="2. Residency proof 1",
                             file_types=[".pdf", ".jpg", ".jpeg", ".png"],
+                        )
+                        sample_b_res1_btn = gr.Button(
+                            "Load sample — Residency proof 1",
+                            size="sm",
+                            variant="secondary",
                         )
                         b_doc3 = gr.File(
                             elem_classes=["civic-file-slot"],
-                            label="Document 3",
+                            label="3. Residency proof 2",
                             file_types=[".pdf", ".jpg", ".jpeg", ".png"],
+                        )
+                        sample_b_res2_btn = gr.Button(
+                            "Load sample — Residency proof 2",
+                            size="sm",
+                            variant="secondary",
                         )
                         b_doc4 = gr.File(
                             elem_classes=["civic-file-slot"],
-                            label="Document 4",
+                            label="4. Vaccine history",
                             file_types=[".pdf", ".jpg", ".jpeg", ".png"],
                         )
-                        b_doc5 = gr.File(
-                            elem_classes=["civic-file-slot"],
-                            label="Document 5 (optional)",
-                            file_types=[".pdf", ".jpg", ".jpeg", ".png"],
-                        )
-
-                        analyze_btn_b = gr.Button(
-                            "Check My Packet",
-                            variant="primary",
-                            size="lg",
+                        sample_b_vaccine_btn = gr.Button(
+                            "Load sample — Vaccine history",
+                            size="sm",
+                            variant="secondary",
                         )
 
                     with gr.Column(scale=2):
@@ -1411,10 +1450,30 @@ CivicLens checks against the four BPS requirements:
 
                 analyze_btn_b.click(
                     fn=process_track_b,
-                    inputs=[b_doc1, b_doc2, b_doc3, b_doc4, b_doc5],
+                    inputs=[b_doc1, b_doc2, b_doc3, b_doc4],
                     outputs=[results_html_b, json_output_b],
                     show_progress="minimal",
                     show_progress_on=results_html_b,
+                )
+                sample_b_age_btn.click(
+                    fn=load_sample_track_b_proof_of_age,
+                    inputs=[],
+                    outputs=b_doc1,
+                )
+                sample_b_res1_btn.click(
+                    fn=load_sample_track_b_residency_1,
+                    inputs=[],
+                    outputs=b_doc2,
+                )
+                sample_b_res2_btn.click(
+                    fn=load_sample_track_b_residency_2,
+                    inputs=[],
+                    outputs=b_doc3,
+                )
+                sample_b_vaccine_btn.click(
+                    fn=load_sample_track_b_vaccine,
+                    inputs=[],
+                    outputs=b_doc4,
                 )
 
     gr.HTML(f"""
