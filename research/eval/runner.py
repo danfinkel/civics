@@ -261,7 +261,7 @@ Rules:
 """
 
 
-SCORING_RUBRIC_VERSION = "2026-04-12-v3"
+SCORING_RUBRIC_VERSION = "2026-04-12-v4"
 
 LABEL_SCORES: dict[str, int] = {
     "exact": 2,
@@ -375,7 +375,9 @@ def _semantic_paraphrase_ok(extracted: str, expected: str) -> bool:
     ext = str(extracted).strip()
     if len(exp) > 20 or "_" not in exp:
         return False
-    if len(ext) <= 30:
+    # Demand real prose expansion vs the underscore slug — not a brittle >30-char bar
+    # (e.g. "Verification Request - Income" is 29 chars but clearly paraphrases earned_income).
+    if len(ext) <= len(exp):
         return False
     terms = [t for t in exp.split("_") if len(t) > 1 and t.lower() not in _PARAPHRASE_STOPWORDS]
     if not terms:
@@ -1220,6 +1222,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--temp", type=float, default=0.0, dest="temperature")
     p.add_argument("--cooldown", type=float, default=2.0)
     p.add_argument(
+        "-o",
         "--out",
         type=Path,
         default=DEFAULT_EVAL_JSONL_OUT,
@@ -1336,7 +1339,7 @@ def main() -> int:
         out_path = args.out.resolve()
         if out_path == DEFAULT_EVAL_JSONL_OUT.resolve():
             out_path = args.rescore.with_name(
-                args.rescore.stem + "_rescored_v3.jsonl"
+                f"{args.rescore.stem}_rescored_{SCORING_RUBRIC_VERSION}.jsonl"
             ).resolve()
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with out_path.open("w", encoding="utf-8") as f:

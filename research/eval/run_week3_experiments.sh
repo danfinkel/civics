@@ -6,6 +6,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# D01 prompt ablation JSONLs (PRIMARY) — standalone lab folder alongside eval harness.
+PROMPT_ABLATION_RESULTS_DIR="$SCRIPT_DIR/../prompt_ablation/results"
+mkdir -p "$PROMPT_ABLATION_RESULTS_DIR"
+PROMPT_ABLATION_RESULTS="$(cd "$PROMPT_ABLATION_RESULTS_DIR" && pwd)"
+
 if [[ -z "${PHONE_IP:-}" && -z "${PHONE_URL:-}" ]]; then
   echo "Set PHONE_IP (e.g. export PHONE_IP=192.168.1.x) or PHONE_URL before running."
   exit 1
@@ -35,7 +40,7 @@ condition_break_countdown() {
 # Order: generic → semantic → semantic-preview (run preview last per ops guidance).
 run_prompt_ablation() {
   echo "=== PRIMARY: D01 prompt ablation — 3 sessions × 4 variants × 20 runs = 80 rows/file ==="
-  echo "Outputs: results/ablation_{generic,semantic,semantic_preview}_${STAMP}.jsonl"
+  echo "Outputs: $PROMPT_ABLATION_RESULTS/ablation_{generic,semantic,semantic_preview}_${STAMP}.jsonl"
   python3 runner.py \
     --artifacts D01 \
     --track a \
@@ -45,7 +50,7 @@ run_prompt_ablation() {
     --temp 0.0 \
     --cooldown 2.0 \
     --condition-break-s 0 \
-    --out "results/ablation_generic_${STAMP}.jsonl"
+    --out "$PROMPT_ABLATION_RESULTS/ablation_generic_${STAMP}.jsonl"
 
   condition_break_countdown "${CONDITION_BREAK_S}"
 
@@ -58,7 +63,7 @@ run_prompt_ablation() {
     --temp 0.0 \
     --cooldown 2.0 \
     --condition-break-s 0 \
-    --out "results/ablation_semantic_${STAMP}.jsonl"
+    --out "$PROMPT_ABLATION_RESULTS/ablation_semantic_${STAMP}.jsonl"
 
   condition_break_countdown "${CONDITION_BREAK_S}"
 
@@ -72,7 +77,7 @@ run_prompt_ablation() {
     --temp 0.0 \
     --cooldown 2.0 \
     --condition-break-s 0 \
-    --out "results/ablation_semantic_preview_${STAMP}.jsonl"
+    --out "$PROMPT_ABLATION_RESULTS/ablation_semantic_preview_${STAMP}.jsonl"
 }
 
 # Five generic/clean runs with full raw text to stdout (investigate clean-PDF path).
@@ -87,7 +92,7 @@ run_prompt_ablation_probe_generic_clean() {
     --temp 0.0 \
     --cooldown 2.0 \
     --print-raw-response \
-    --out "results/probe_generic_clean_${STAMP}.jsonl"
+    --out "$PROMPT_ABLATION_RESULTS/probe_generic_clean_${STAMP}.jsonl"
 }
 
 run_baseline() {
@@ -159,4 +164,6 @@ case "$STEP" in
     ;;
 esac
 
-echo "Agent 4 summary: python3 generate_agent4_summary.py results/<your>.jsonl -o summary_for_agent4.md"
+echo "Agent 4 summary (paths depend on experiment):"
+echo "  Prompt ablation: python3 generate_agent4_summary.py \"../prompt_ablation/results/ablation_<...>.jsonl\" -o \"../prompt_ablation/results/summary.md\""
+echo "  Other eval runs: python3 generate_agent4_summary.py results/<your>.jsonl -o summary_for_agent4.md"

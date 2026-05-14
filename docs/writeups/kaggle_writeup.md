@@ -4,7 +4,7 @@ In Massachusetts, 40.9% of SNAP participants with young children lose benefits d
 
 This interpretation gap recurs across government services. Boston Public Schools registration requires two residency proofs from different document categories. Many families don't know the rule until a registration specialist tells them, after they've already made the trip.
 
-The documents involved — pay stubs, birth certificates, government notices, state IDs — are among the most sensitive a person carries. Cloud-based document AI requires uploading them to a server. For residents already navigating difficult interactions with government institutions, that's a meaningful additional trust barrier. CivicLens processes everything on-device. Documents never leave the phone.
+The documents involved — pay stubs, birth certificates, government notices, state IDs — are private and sensitive. Cloud-based document AI requires uploading them to a server. For residents already navigating difficult interactions with government institutions, that's a meaningful additional trust barrier. 
 
 *[1] Kowalczyk et al., JAMA Network Open, 2022 — n=70,799 Massachusetts SNAP participants*
 *[2] Homonoff & Somerville, American Economic Journal: Economic Policy, 2021*
@@ -13,7 +13,13 @@ The documents involved — pay stubs, birth certificates, government notices, st
 
 ## Our Solution
  
-CivicLens is a mobile application that helps residents prepare document packets for government benefit processes and school enrollment. A resident photographs their government notice, uploads supporting documents, and receives a plain-language assessment of whether what they have satisfies what is being asked. We developed two modes for demonstration:  **Track A** addresses SNAP recertification: it reads a DTA verification notice, identifies the required proof category and response deadline, and assesses whether uploaded documents satisfy the requirement. **Track B** addresses Boston Public Schools enrollment: it checks a document packet against the four registration requirements and flags common errors like the two-lease residency mistake.
+CivicLens is a mobile application that helps residents prepare document packets for government benefit processes. A resident photographs their government notice, uploads supporting documents, and receives a plain-language assessment of whether what they have satisfies what is being asked. CivicLens processes everything on-device. Documents never leave the phone.
+
+We developed two modes for demonstration:
+
+**Track A** addresses SNAP recertification: it reads a verification notice, identifies the required proof category and response deadline, and assesses whether uploaded documents satisfy the requirement. 
+
+**Track B** addresses Boston Public Schools enrollment: it checks a document packet against the four registration requirements and flags common errors like the two-lease residency mistake.
 
 ---
 
@@ -31,9 +37,9 @@ A web demo using Gemma 4 E4B via the HF Inference API is deployed at `https://Da
 
 ## How We Used Gemma 4
 
-**Multimodal JPEG input, not PDF.** Our experiments revealed that high-DPI PDF renders saturate Gemma 4's visual token budget on layout elements before reaching the body text residents need extracted.  For this prototype all production inference runs on JPEG input. Images are pre-processed to a maximum of 2048px — sufficient for text resolution, small enough to avoid token saturation.
+**Multimodal JPEG input, not PDF.** Gemma 4 testing revealed that high-DPI PDF renders saturate the models visual token budget on layout elements before reaching the body text residents need extracted.  For this prototype all production inference runs on JPEG input. Images are pre-processed to a maximum of 2048px — sufficient for text resolution, small enough to avoid token saturation.
 
-**Semantic prompt design.** We ran a 180-run controlled ablation comparing generic field names (`key_date`, `document_type`) against semantically precise field names aligned to the DTA notice's information architecture (`response_deadline`, `requested_category`, `consequence`). Generic prompts produced hallucinations on JPEG inputs and triggered wholesale template substitution on PDF inputs — the model returned a fabricated loan agreement with high confidence instead of the actual government notice. Semantic prompts eliminated genuine hallucination entirely on clean and degraded JPEG inputs. This effect exceeded the accuracy difference between E2B and E4B model variants, making prompt design the more tractable optimization path for on-device inference.
+**Semantic prompt design.** We ran controlled experiments comparing generic field names (`key_date`, `document_type`) against semantically precise field names aligned to the SNAP recertification notice's information architecture (`response_deadline`, `requested_category`, `consequence`). Generic prompts were sensitive and led to misattributing fields. Semantic prompts helped Gemma 4 E2B report fields with the correct labels. Originally we wondered if we needed a larger model such as E4B -- this effect helped us feel confident about our choice to rely on E2B and to focus design efforts on prompt design for accurate on-device inference.
 
 **Deterministic inference at temperature=0.0**. All production and evaluation inference runs use temperature=0.0. Early experimentation suggested that greedy decoding produces more consistent structured JSON output than sampling-based generation for this task — field values that appeared across multiple runs were stable rather than varying by phrasing or format on each call. This is intuitive for a structured extraction task where the answer is either in the document or it isn't, and creative variation in output is a liability rather than an asset.
 
@@ -43,11 +49,11 @@ A web demo using Gemma 4 E4B via the HF Inference API is deployed at `https://Da
 
 ## Challenges and What We Learned
 
-**We were wrong about blur.** We anticipated blur as the primary failure mode for phone photography and built a Laplacian variance blur detector. A real-world experiment — extracting 26 image quality attributes from 34 real iPhone photos and ranking by Cohen's d against pass/fail labels — revealed that Laplacian variance ranked 22nd out of 26 features. It is not a meaningful predictor of LLM extraction failure. Deadline extraction held at 100% accuracy across clean, degraded, and blurry inputs — the model's visual salience for high-contrast bordered boxes made it blur-invariant on the fields residents need most.
+**We were wrong about blur.** We anticipated blur as the primary failure mode for phone photography and built a Laplacian variance blur detector. A real-world experiment — extracting 26 image quality attributes from 34 real iPhone photos and ranking by Cohen's d against pass/fail labels — revealed that Laplacian variance ranked 22nd out of 26 features. It is not a meaningful predictor of LLM extraction failure. A large promiment field like deadline was extracted at 100% accuracy across clean, degraded, and blurry inputs — the model's visual salience for high-contrast bordered boxes made it blur-invariant on the fields residents need most.
 
 The real failure modes were scene clutter with a small document, severe rotation, anomalous frame dimensions from cropping, and document too small in frame. Each corresponds to a specific resident behavior — photographing from too far away, holding the phone at an angle, accidentally cropping the document — not camera optics. We replaced the Laplacian detector with a four-rule gate calibrated on real photos and validated against 100 synthetic test cases.
 
-**Generic prompts triggered catastrophic failure.** Before writing product code, our spike evaluation revealed the most dangerous failure mode: template substitution. With no domain context in the prompt schema, the model ignored the actual document and returned coherent, well-formatted, completely fabricated content — a DTA government notice became a loan agreement, returned with high confidence and no abstention signal. Semantic field names that specify the schema-document mapping explicitly produced a signficiant hallucination reduction, confirming that prompt schema design is a safety requirement for on-device civic document AI, not merely an accuracy optimization.
+**Generic prompts can trigger misattribution and/or hallunication.** Our initial spike used PDF renders as synthetic test inputs — a choice that introduced a confound. High-DPI PDFs triggered wholesale template substitution, where the model ignored document content entirely and returned fabricated coherent output. When we identified this as a rendering artifact rather than a prompt failure, we switched to JPEG inputs matching the phone-photo deployment context. On JPEG inputs, generic prompts produced a subtler failure: date misattribution and schema-field mismatch. Semantic prompts eliminated both. The PDF finding shaped our input pipeline design — the app routes residents to photograph documents rather than scan them.
 
 **The llama.cpp integration required low-level debugging.** Running Gemma 4 E2B on iOS via llama.cpp meant working at the FFI boundary between Dart and native C. Between December 2025 and April 2026, llama.cpp introduced breaking changes to three C structs that silently corrupted memory when the Dart bridge used stale field layouts. The failure mode was non-deterministic — correct results occasionally, crashes or garbage output otherwise. Identifying the root cause required diffing struct layouts across commits and patching the FFI bridge manually. The vendored patch is the primary reason the mobile app runs reliably on physical devices.
 
@@ -63,11 +69,11 @@ Known gaps: bottom-crop detection (key fields cropped from frame) remains undete
 
 ## Choices We Feel Good About
 
-**Prompt design over model scaling.** Hallucination reduction from semantic prompting exceeds the accuracy improvement from upgrading E2B to E4B, at zero additional compute cost. For on-device AI in resource-constrained settings, prompt schema design should be the primary optimization target.
+**Prompt design over model scaling.** We were able to reduce misattribution and hallucination by tuning our product design to jpg images and focusing our prompts. We did not need to switch to a larger model like E4B. For on-device AI in resource-constrained settings, the smaller the model the more accessible the application will be, especially to lower-income individuals who may not own the latest and greatest devices. 
 
 **On-device as trust architecture, not preference.** Privacy-by-architecture — a system that cannot transmit documents because there is no transmission mechanism — is meaningfully different from privacy-by-policy for residents who have rational reasons to distrust data-collecting intermediaries. The on-device pipeline latency is the answer to the privacy requirement, not a workaround for it.
 
-**Evidence before code.** Running 180 controlled experiments before developing the product led to an informed architecture grounded in measured evidence. The image quality gate, the semantic prompts, the token budget design, the human-in-loop results UI — each came from a specific measured failure, not an assumption. 
+**Experiment-driven design.** Running controlled experiments before, during and after product development led to an informed architecture grounded in measured evidence. The image quality gate, the semantic prompts, the token budget design, the human-in-loop results UI — each came from a specific measured failure, not an assumption. 
 
 ---
 

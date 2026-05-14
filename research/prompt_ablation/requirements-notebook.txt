@@ -1,0 +1,4 @@
+# Analysis notebook (pandas + Jupyter). For phone-driven runs install ../eval/requirements.txt too.
+pandas>=2.0.0
+matplotlib>=3.7.0
+jupyter>=1.0.0

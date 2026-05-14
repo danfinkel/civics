@@ -88,11 +88,11 @@ Use this section to reproduce experiments without hunting through the rest of th
 
 | Goal | Command / pattern |
 |------|-------------------|
-| **D01 prompt ablation (3 JSONLs)** | `./run_week3_experiments.sh prompt-ablation` |
+| **D01 prompt ablation (3 JSONLs)** | `./run_week3_experiments.sh prompt-ablation` — or standalone [`../prompt_ablation/run_prompt_ablation.sh`](../prompt_ablation/run_prompt_ablation.sh); Jupyter: [`run_experiments.ipynb`](../prompt_ablation/run_experiments.ipynb) (+ [`analysis.ipynb`](../prompt_ablation/analysis.ipynb)) |
 | **Preview-only ablation (condition C)** | `python3 runner.py --semantic-preview …` |
 | **Cross-artifact GT-shaped (e.g. D01,D02,D03)** | `python3 runner.py --artifacts D01,D02,D03` (no `--prompt-condition`) |
 | **Re-score old JSONL (no phone)** | `python3 runner.py --rescore results/your_run.jsonl` |
-| **Markdown summary for writeups** | `python3 generate_agent4_summary.py results/*.jsonl -o summary_for_agent4.md` |
+| **Markdown summary for writeups** | `python3 generate_agent4_summary.py ../prompt_ablation/results/ablation_*.jsonl -o ../prompt_ablation/results/summary.md` (prompt ablation — adjust paths/glob) |
 | **Token budget sweep (D03)** | `./run_week3_experiments.sh token-ablation` |
 | **Thermal + metrics poll** | `./run_week3_experiments.sh thermal` |
 | **Debug clean PDF + generic** | `./run_week3_experiments.sh prompt-ablation-probe` |
@@ -109,7 +109,7 @@ cd research/eval
 ./run_week3_experiments.sh prompt-ablation
 ```
 
-- **Outputs:** `results/ablation_generic_<STAMP>.jsonl`, `ablation_semantic_<STAMP>.jsonl`, `ablation_semantic_preview_<STAMP>.jsonl` (80 rows each: 4 variants × 20 runs).
+- **Outputs:** `research/prompt_ablation/results/ablation_generic_<STAMP>.jsonl`, `ablation_semantic_<STAMP>.jsonl`, `ablation_semantic_preview_<STAMP>.jsonl` (80 rows each: 4 variants × 20 runs).
 - **Between sessions:** waits **`CONDITION_BREAK_S`** seconds (default **180**). Disable with `export CONDITION_BREAK_S=0`.
 
 **Equivalent manual runs** (if you prefer not to use the script):
@@ -126,7 +126,7 @@ for cond in generic semantic semantic-preview; do
     --temp 0.0 \
     --cooldown 2.0 \
     --condition-break-s 0 \
-    --out "results/ablation_${cond//-/_}_${STAMP}.jsonl"
+    --out "../prompt_ablation/results/ablation_${cond//-/_}_${STAMP}.jsonl"
   # optional: sleep 180 between conditions
 done
 ```
@@ -143,7 +143,7 @@ python3 runner.py \
   --temp 0.0 \
   --cooldown 2.0 \
   --condition-break-s 180 \
-  --out "results/prompt_ablation_d01_$(date +%Y%m%d_%H%M).jsonl"
+  --out "../prompt_ablation/results/prompt_ablation_d01_$(date +%Y%m%d_%H%M).jsonl"
 ```
 
 **Strict mode:** With `--prompt-condition`, the runner **aborts** on `/infer` errors or empty responses (so you do not log bad rows). For debugging device 500s, add **`--no-strict-infer`** and/or **`--print-raw-response`**.
@@ -187,12 +187,12 @@ Rows **do not** include `prompt_condition`, `critical_*`, or `abstention_rate` (
 
 ### 4. Re-score existing JSONL (no device, same rubric as `runner.py`)
 
-Uses stored **`raw_response`** only; writes **`*_rescored_v3.jsonl`** when `--out` is left at default.
+Uses stored **`raw_response`** only; writes **`*_rescored_<SCORING_RUBRIC_VERSION>.jsonl`** next to the input when `--out` / `-o` is left at default.
 
 ```bash
-python3 runner.py --rescore results/ablation_semantic_20260412_1937.jsonl
+python3 runner.py --rescore ../prompt_ablation/results/ablation_semantic_20260412_1937.jsonl
 # Optional explicit output:
-python3 runner.py --rescore results/your.jsonl --out results/your_rescored.jsonl
+python3 runner.py --rescore ../prompt_ablation/results/your.jsonl -o ../prompt_ablation/results/your_rescored.jsonl
 ```
 
 Check **`scoring_rubric_version`** inside rows when citing strict **`hallucinated`** vs other labels. See [Scoring rubric](#scoring-rubric).
@@ -206,11 +206,13 @@ Check **`scoring_rubric_version`** inside rows when citing strict **`hallucinate
 
 ```bash
 python3 generate_agent4_summary.py \
-  results/ablation_semantic_20260412_2022.jsonl \
+  ../prompt_ablation/results/ablation_semantic_20260412_2022.jsonl \
   results/cross_gt_shaped_20260412_2151.jsonl \
-  -o summary_for_agent4.md \
+  -o ../prompt_ablation/results/summary_for_agent4.md \
   --device "iPhone (Gemma 4 E2B, on-device)"
 ```
+
+(Older JSONLs under `research/eval/results/` still work — pass whichever paths apply.)
 
 **Quick per-artifact label counts** (example — adjust path):
 
@@ -408,7 +410,7 @@ Plan context: `docs/sprint/week3/plans/agent2_wed_fri_plan.md`.
 | `--token-budget` | Single optional max output tokens. |
 | `--token-budgets` + `--ablation` | Matrix over budgets (no `--prompt-condition`). |
 | `--metrics-log` / `--metrics-interval` | Background `/metrics` sampling. |
-| `--rescore PATH` | Re-score JSONL from `raw_response`; default output `*_rescored_v3.jsonl` unless `--out` set. |
+| `--rescore PATH` | Re-score JSONL from `raw_response`; default output `*_rescored_<rubric>.jsonl` unless `--out` / `-o` set. |
 
 ---
 
@@ -424,7 +426,7 @@ Field-level scoring lives in `runner.py` (`score_field`, `SCORING_RUBRIC_VERSION
 | **transcription_error** | 0 | OCR/blur: Levenshtein on standard-normalized strings ÷ `len(expected_norm)` ≤ **`LEVENSHTEIN_THRESHOLD` (0.45)**, and not already partial. |
 | **unreadable** | 0 | Model emitted `UNREADABLE` (intended abstention). |
 | **missing** | 0 | Empty / null extraction. |
-| **semantic_paraphrase** | 0 | Short snake_case categorical GT (≤20 chars, contains `_`), extracted is natural language (>30 chars), and ≥50% of expected’s non-stopword underscore tokens appear in extracted. |
+| **semantic_paraphrase** | 0 | Short snake_case categorical GT (≤20 chars, contains `_`), extracted is **longer prose** than the GT string (not only a tightened slug), and ≥50% of expected’s non-stopword underscore tokens appear in extracted. |
 | **verbatim_quote** | 0 | Long extracted text in the **correct** field vs short categorical GT; checked before misattribution. |
 | **misattribution** | −1 | Extracted aligns with **another** field’s GT. `correct_field`: **false**. |
 | **hallucinated** | −1 | No relationship to expected after the checks above (strict fabrication). |
@@ -434,8 +436,8 @@ Field-level scoring lives in `runner.py` (`score_field`, `SCORING_RUBRIC_VERSION
 **Re-score:**
 
 ```bash
-python3 runner.py --rescore results/ablation_semantic_20260412_1546.jsonl
-# → results/ablation_semantic_20260412_1546_rescored_v3.jsonl (unless --out is set)
+python3 runner.py --rescore ../prompt_ablation/results/ablation_semantic_20260412_1546.jsonl
+# → ../prompt_ablation/results/ablation_semantic_20260412_1546_rescored_2026-04-12-v4.jsonl (unless -o / --out is set)
 ```
 
 ---
@@ -443,7 +445,7 @@ python3 runner.py --rescore results/ablation_semantic_20260412_1546.jsonl
 ## Notes
 
 - **Clean PDF** (`clean`) is often a poor OCR baseline; prefer **`clean_jpeg`** or **`degraded`** for behavior that matches phone photos.
-- **`results/`** is gitignored; create it before first run (`mkdir -p results`).
+- **`research/eval/results/`** is gitignored; create before first smoke run (`mkdir -p research/eval/results`). **D01 prompt-ablation JSONLs** go under **`research/prompt_ablation/results/`** (`run_week3_experiments.sh` / [`run_prompt_ablation.sh`](../prompt_ablation/run_prompt_ablation.sh)).
 
 ---
 

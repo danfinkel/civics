@@ -20,6 +20,10 @@ research/eval/results/*
 !research/eval/results/blur_testing/
 !research/eval/results/blur_testing/README.md
 
+# --- Prompt ablation lab (runner JSONLs) ---
+research/prompt_ablation/results/*
+!research/prompt_ablation/results/.gitkeep
+
 # --- Python ---
 .venv/
 venv/

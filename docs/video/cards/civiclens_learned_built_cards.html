@@ -343,8 +343,8 @@
     <div class="row">
       <div class="learned r2-learned">
         <div class="learned-tag">Learned — prompt design</div>
-        <div class="learned-claim">Generic field names triggered hallucination</div>
-        <div class="learned-detail">Prompts using key_date, document_type produced 33% hallucination on JPEG inputs and wholesale template substitution on PDFs. The model had no basis for schema-to-document mapping.</div>
+        <div class="learned-claim">Generic schemas cause misattribution</div>
+        <div class="learned-detail">Prompts using key_date and document_type caused dates to land in wrong fields and schema-mismatched fields to fill with plausible-but-wrong content. Semantic prompts eliminated both failure modes entirely on JPEG inputs.</div>
       </div>
       <div class="arrow-cell">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
